@@ -127,6 +127,11 @@ pub fn refine(event: &str, map: &Map<String, Value>) -> String {
     if event == "Stop" && map.get("status").and_then(Value::as_str) == Some("error") {
         return "StopFailure".into();
     }
+    // Antigravity gates tool execution on PreToolUse: treat as PermissionRequest
+    // so the island displays approval cards (Allow / Deny / Always).
+    if event == "PreToolUse" && map.get("coucou_agent").and_then(Value::as_str) == Some("antigravity") {
+        return "PermissionRequest".into();
+    }
     event.to_string()
 }
 
@@ -263,5 +268,6 @@ mod tests {
             assert_eq!(refine("Stop", &obj(json!({ "status": status }))), "Stop");
         }
         assert_eq!(refine("PreToolUse", &obj(json!({ "status": "error" }))), "PreToolUse");
+        assert_eq!(refine("PreToolUse", &obj(json!({ "coucou_agent": "antigravity" }))), "PermissionRequest");
     }
 }

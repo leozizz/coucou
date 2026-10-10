@@ -71,7 +71,9 @@ pub fn start(app: AppHandle) {
     spawn(app.clone(), "integration_github", 7, 300, poll_github);
     spawn_github_loops(app.clone());
     spawn(app.clone(), "integration_calcom", 8, 300, poll_calcom);
-    spawn(app, "integration_notion", 9, 300, poll_notion);
+    spawn(app.clone(), "integration_notion", 9, 300, poll_notion);
+    #[cfg(windows)]
+    spawn(app, "integration_whatsapp", 10, 15, poll_whatsapp);
 }
 
 /// True when the user has this integration switched on in settings.
@@ -120,6 +122,8 @@ pub async fn poll_once(app: AppHandle, id: &str) {
         "integration_resend" => poll_resend(app).await,
         "integration_notion" => poll_notion(app).await,
         "integration_calcom" => poll_calcom(app).await,
+        #[cfg(windows)]
+        "integration_whatsapp" => poll_whatsapp(app).await,
         _ => {}
     }
 }
@@ -148,6 +152,32 @@ fn status_error(code: u16, unauthorised_hint: &str) -> String {
         403 => unauthorised_hint.to_string(),
         _ => crate::i18n::tf("API error {code}", &[("code", &code.to_string())]),
     }
+}
+
+// ── WhatsApp (Windows) ────────────────────────────────────────────────────────
+
+#[cfg(windows)]
+async fn poll_whatsapp(app: AppHandle) {
+    let wa = tokio::task::block_in_place(crate::media::whatsapp);
+    let event = if wa.unread > 0 && is_new("whatsapp", &wa.unread.to_string()) {
+        Some(IntegrationEvent {
+            success: true,
+            label: if wa.unread == 1 {
+                "1 unread message".into()
+            } else {
+                format!("{} unread messages", wa.unread)
+            },
+            detail: None,
+        })
+    } else {
+        None
+    };
+    emit(&app, IntegrationUpdate {
+        id: "integration_whatsapp",
+        data: json!({ "present": wa.present, "unread": wa.unread }),
+        error: None,
+        event,
+    });
 }
 
 // ── Stripe ────────────────────────────────────────────────────────────────────

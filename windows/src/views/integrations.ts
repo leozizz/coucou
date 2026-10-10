@@ -440,9 +440,43 @@ export function hasIntegrationData(id: string): boolean {
       return arr(id, "pages").length > 0;
     case "integration_calcom":
       return info.loaded;
+    case "integration_whatsapp":
+      return get(id).present === true;
     default:
       return false;
   }
+}
+
+// ── WhatsApp (Window title unread message detection) ─────────────────────────
+
+function whatsappCard(task: AgentTask, openSettings: () => void): HTMLElement {
+  const d = get("integration_whatsapp");
+  const present = d.present === true;
+  const unread = Number(d.unread ?? 0);
+  if (!present) return idleCard(task, openSettings);
+  const label = unread === 0
+    ? t("No unread messages")
+    : unread === 1 ? t("1 unread message") : t("{n} unread messages", { n: unread });
+  return h(
+    "div",
+    { class: "int-card" },
+    header("#25D366", "WhatsApp", unread > 0 ? t("New messages") : t("No unread messages")),
+    h(
+      "div",
+      { class: "int-rows tight" },
+      listRow(unread > 0 ? "#25D366" : "#6B7079", true,
+        h("span", { class: "int-name", text: label }),
+      ),
+    ),
+    h("div", { class: "int-actions" },
+      h("button", {
+        class: "link-btn",
+        style: "color:#25D366d9",
+        text: t("Open WhatsApp"),
+        onclick: () => void Bridge.openUrl("https://web.whatsapp.com"),
+      }),
+    ),
+  );
 }
 
 export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHooks): HTMLElement {
@@ -479,6 +513,8 @@ export function renderIntegrationCard(task: AgentTask, hooks: IntegrationCardHoo
       return notionCard();
     case "integration_calcom":
       return calcomCard();
+    case "integration_whatsapp":
+      return whatsappCard(task, hooks.openSettings);
     default:
       return idleCard(task, hooks.openSettings);
   }

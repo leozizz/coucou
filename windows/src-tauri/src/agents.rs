@@ -516,9 +516,8 @@ fn gemini_install(root: &Value, commands: &[(String, String, u64)]) -> Result<Va
 //
 // Hooks are named groups at the top level; Coucou's is `coucou`. Tool events
 // take matcher groups, lifecycle events take handlers directly; timeouts are
-// in seconds. Merge and removal come from #298 (kobaltgit). The relay answers
-// PreToolUse with "{}" — no decision — never with an allow: Antigravity's own
-// permission rules stay in charge.
+// in seconds. The relay answers PreToolUse with the island's decision (allow / deny)
+// or "ask" on timeout so Antigravity prompts in the terminal.
 
 const ANTIGRAVITY_TOOL_EVENTS: &[&str] = &["PreToolUse", "PostToolUse"];
 const ANTIGRAVITY_LIFECYCLE_EVENTS: &[&str] = &["PreInvocation", "PostInvocation", "Stop"];

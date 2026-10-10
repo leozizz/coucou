@@ -424,7 +424,12 @@ pub async fn spotify_refresh(app: AppHandle) -> Option<PlayerState> {
     {
         tauri::async_runtime::spawn_blocking(move || linux::refresh(&linux::Out::App(app))).await.ok().flatten()
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
+    {
+        let _ = app;
+        Some(windows::current_state())
+    }
+    #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     {
         let _ = app;
         None
@@ -439,7 +444,12 @@ pub async fn spotify_control(app: AppHandle, action: String, value: Option<f64>)
     {
         tauri::async_runtime::spawn_blocking(move || linux::control(&linux::Out::App(app), &action, value)).await.unwrap_or(false)
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
+    {
+        let _ = (app, value);
+        crate::media::press(&action).is_ok()
+    }
+    #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     {
         let _ = (app, action, value);
         false
@@ -454,7 +464,11 @@ pub async fn spotify_open() -> bool {
     {
         tauri::async_runtime::spawn_blocking(linux::open).await.unwrap_or(false)
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
+    {
+        crate::media::open_spotify()
+    }
+    #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     {
         false
     }
@@ -467,7 +481,11 @@ pub fn spotify_installed() -> bool {
     {
         linux::installed()
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
+    {
+        crate::media::spotify_installed()
+    }
+    #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     {
         false
     }
@@ -478,8 +496,78 @@ pub fn spotify_installed() -> bool {
 pub fn sync(app: &AppHandle, active_integrations: &[String]) {
     #[cfg(target_os = "linux")]
     linux::sync(app, active_integrations.iter().any(|id| id == PILL_ID));
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
+    windows::sync(app, active_integrations.iter().any(|id| id == PILL_ID));
+    #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     let _ = (app, active_integrations);
+}
+
+// ── Windows: Window Title Polling & Media Keys ────────────────────────────────
+
+#[cfg(target_os = "windows")]
+pub mod windows {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Mutex;
+    use std::time::Duration;
+
+    static LISTENER_RUNNING: AtomicBool = AtomicBool::new(false);
+    static LAST_STATE: Mutex<Option<PlayerState>> = Mutex::new(None);
+
+    pub fn current_state() -> PlayerState {
+        let np = crate::media::now_playing();
+        let installed = crate::media::spotify_installed();
+        let mut state = PlayerState {
+            running: np.running,
+            installed: installed || np.running,
+            playing: np.playing,
+            position: 0.0,
+            position_at: now_ms(),
+            volume: 70,
+            ..Default::default()
+        };
+        if np.playing && (!np.title.is_empty() || !np.artist.is_empty()) {
+            state.track = Some(Track {
+                id: format!("spotify:track:{}:{}", np.artist, np.title),
+                title: if np.title.is_empty() { "Spotify".into() } else { np.title },
+                artist: np.artist,
+                album: String::new(),
+                duration: 0.0,
+                art_url: None,
+                object_path: String::new(),
+            });
+        }
+        state
+    }
+
+    pub fn sync(app: &AppHandle, active: bool) {
+        if !active {
+            LISTENER_RUNNING.store(false, Ordering::Relaxed);
+            return;
+        }
+
+        if LISTENER_RUNNING.swap(true, Ordering::Relaxed) {
+            return;
+        }
+
+        let app_handle = app.clone();
+        std::thread::Builder::new()
+            .name("coucou-spotify-win".into())
+            .spawn(move || {
+                let mut last_np = crate::media::NowPlaying::default();
+                while LISTENER_RUNNING.load(Ordering::Relaxed) {
+                    let np = crate::media::now_playing();
+                    if np != last_np {
+                        last_np = np.clone();
+                        let state = current_state();
+                        *LAST_STATE.lock().unwrap() = Some(state.clone());
+                        emit_state(&app_handle, &state);
+                    }
+                    std::thread::sleep(Duration::from_millis(1000));
+                }
+            })
+            .ok();
+    }
 }
 
 // ── Linux: MPRIS over D-Bus ───────────────────────────────────────────────────

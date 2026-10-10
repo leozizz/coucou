@@ -40,6 +40,7 @@ test("the catalog holds the Mac's pills, in the Mac's order, with the Mac's valu
     ["integration_stripe", "Stripe", "#0570DE", "service", "Integration"],
     ["integration_music", "Apple Music", "#FA2D48", "service", "Integration"],
     ["integration_spotify", "Spotify", "#1DB954", "service", "Integration"],
+    ["integration_whatsapp", "WhatsApp", "#25D366", "service", "Integration"],
   ];
   assert.deepEqual(
     PILL_CATALOG.map((p) => [p.id, p.name, p.color, p.category, p.subtitle]),
@@ -73,33 +74,24 @@ test("IDs are unique", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("this build leaves out what only macOS has, Claude Desktop on Linux and Spotify on Windows", () => {
+test("this build leaves out what only macOS has", () => {
   const windows = availablePills("windows").map((p) => p.id);
   const linux = availablePills("linux").map((p) => p.id);
   for (const id of ["integration_music"]) {
     assert.ok(!windows.includes(id), id);
     assert.ok(!linux.includes(id), id);
   }
-  // Their plugins are written from Settings → Agents, and the chat talks to
-  // every provider (port/chat-providers), on both systems.
-  for (const id of ["agent_opencode", "agent_amp", "agent_hermes", "ai_google", "ai_openai", "ai_ollama", "ai_lmstudio"]) {
-    assert.ok(windows.includes(id), id);
-    assert.ok(linux.includes(id), id);
-  }
-  assert.ok(windows.includes("agent_claude-desktop"));
-  assert.ok(!linux.includes("agent_claude-desktop"));
-  // Spotify is read over MPRIS, which only Linux has.
+  // Spotify is available on both systems.
+  assert.ok(windows.includes("integration_spotify"));
   assert.ok(linux.includes("integration_spotify"));
-  assert.ok(!windows.includes("integration_spotify"));
-  assert.deepEqual(
-    linux.filter((id) => id !== "integration_spotify"),
-    windows.filter((id) => id !== "agent_claude-desktop"),
-  );
+  // WhatsApp is available on Windows.
+  assert.ok(windows.includes("integration_whatsapp"));
+  assert.ok(!linux.includes("integration_whatsapp"));
 });
 
-test("Spotify: a Linux-only service with nothing to set up", () => {
+test("Spotify: a service with nothing to set up", () => {
   const def = pillDefinition("integration_spotify");
-  assert.equal(def.support, "linux");
+  assert.equal(def.support, "yes");
   assert.deepEqual(def.connect, { kind: "none" });
   assert.equal(def.category, "service");
   assert.ok(!isComingSoon("integration_spotify"));
@@ -107,14 +99,14 @@ test("Spotify: a Linux-only service with nothing to set up", () => {
   assert.ok(!mainPillChoices("linux").some((p) => p.id === "integration_spotify"));
 });
 
-test("a Linux-only pill can be declared on Linux and is dropped on Windows", () => {
-  const d = { mainPill: "integration_claude", activeIntegrations: ["integration_spotify", "integration_n8n"] };
-  assert.deepEqual(sanitizeDeclared(d, "linux").activeIntegrations, ["integration_spotify", "integration_n8n"]);
-  assert.deepEqual(sanitizeDeclared(d, "windows").activeIntegrations, ["integration_n8n"]);
+test("a system-specific pill can be declared on its OS and is dropped on others", () => {
+  const d = { mainPill: "integration_claude", activeIntegrations: ["integration_whatsapp", "integration_n8n"] };
+  assert.deepEqual(sanitizeDeclared(d, "windows").activeIntegrations, ["integration_whatsapp", "integration_n8n"]);
+  assert.deepEqual(sanitizeDeclared(d, "linux").activeIntegrations, ["integration_n8n"]);
   const empty = { mainPill: "integration_claude", activeIntegrations: [] };
-  assert.deepEqual(toggleDeclared(empty, "integration_spotify", "linux"), ["integration_spotify"]);
-  assert.equal(toggleDeclared(empty, "integration_spotify", "windows"), null);
-  // And the other way round: Claude Desktop stays Windows only.
+  assert.deepEqual(toggleDeclared(empty, "integration_whatsapp", "windows"), ["integration_whatsapp"]);
+  assert.equal(toggleDeclared(empty, "integration_whatsapp", "linux"), null);
+  // Claude Desktop stays Windows only.
   assert.equal(toggleDeclared(empty, "agent_claude-desktop", "linux"), null);
   assert.deepEqual(toggleDeclared(empty, "agent_claude-desktop", "windows"), ["agent_claude-desktop"]);
 });

@@ -9,10 +9,10 @@
 use serde_json::{json, Map, Value};
 
 /// The agents whose permission requests the island can answer: Claude Code
-/// (no `--agent`), Codex, Copilot CLI and Muse Code. Any decision for another
-/// agent is ignored here too, whatever the app sent.
+/// (no `--agent`), Codex, Copilot CLI, Muse Code and Antigravity. Any decision
+/// for another agent is ignored here too, whatever the app sent.
 pub fn takes_decisions(agent: &str) -> bool {
-    matches!(agent, "" | "codex" | "copilot" | "muse")
+    matches!(agent, "" | "codex" | "copilot" | "muse" | "antigravity")
 }
 
 /// Agents that read a JSON object on stdout after every hook and get `{}` —
@@ -35,6 +35,11 @@ pub fn stdout(agent: &str, event: &str, decision: Option<&str>, question: Option
     }
     let decision = decision.filter(|_| takes_decisions(agent));
     match agent {
+        "antigravity" => match decision.map(str::trim) {
+            Some("allow" | "always") => Some(json!({ "decision": "allow" }).to_string()),
+            Some("deny") => Some(json!({ "decision": "deny", "reason": "Denied from Coucou" }).to_string()),
+            _ => Some(json!({ "decision": "ask" }).to_string()),
+        },
         // Copilot CLI and Muse Code read a bare permissionDecision. Copilot is
         // fail-closed: it must always get valid JSON, so silence is an "ask".
         "copilot" | "muse" => {
@@ -201,8 +206,11 @@ mod tests {
         // Copilot is fail-closed: no decision is an explicit "ask", never silence.
         assert_eq!(stdout("copilot", "PermissionRequest", None, None).unwrap(), r#"{"permissionDecision":"ask"}"#);
         assert_eq!(stdout("muse", "PermissionRequest", None, None), None);
-        // Antigravity needs a decision on PreToolUse: "ask" leaves it to Antigravity's own prompt;
-        // other lifecycle events receive "{}".
+        // Antigravity approvals on PermissionRequest (normalized from PreToolUse).
+        assert_eq!(stdout("antigravity", "PermissionRequest", Some("allow"), None).unwrap(), r#"{"decision":"allow"}"#);
+        assert_eq!(stdout("antigravity", "PermissionRequest", Some("deny"), None).unwrap(), r#"{"decision":"deny","reason":"Denied from Coucou"}"#);
+        assert_eq!(stdout("antigravity", "PermissionRequest", None, None).unwrap(), r#"{"decision":"ask"}"#);
+        // Antigravity PreToolUse fallback without decision:
         assert_eq!(stdout("antigravity", "PreToolUse", None, None).unwrap(), r#"{"decision":"ask"}"#);
         for event in ["PostToolUse", "UserPromptSubmit", "Stop"] {
             assert_eq!(stdout("antigravity", event, None, None).unwrap(), "{}");
