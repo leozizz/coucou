@@ -182,23 +182,31 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
             if !cmd.is_empty() {
                 // 1. The full exact command line approved
                 list.push(format!("command({cmd})"));
+                // Also unescaped quotes version (e.g. \"Coucou ...\" -> "Coucou ...")
+                let unescaped = cmd.replace(r#"\""#, "\"").replace(r#"\'"#, "'");
+                if unescaped != cmd {
+                    list.push(format!("command({unescaped})"));
+                }
 
-                // 2. The base binary / program (npm, pnpm, yarn, git, cargo, python, Set-Content, etc.)
-                if let Some(first_word) = cmd.split_whitespace().next() {
-                    let clean = first_word
-                        .trim_matches('"')
-                        .trim_matches('\'')
-                        .rsplit(['/', '\\'])
-                        .next()
-                        .unwrap_or(first_word)
-                        .trim_matches('"')
-                        .trim_matches('\'')
-                        .trim_end_matches(".exe")
-                        .trim_end_matches(".cmd")
-                        .trim_end_matches(".bat");
-                    if !clean.is_empty() {
-                        list.push(format!("command({clean})"));
-                        list.push(format!("command({clean} *)"));
+                // 2. The base binaries (including in pipelines: cmd1 | cmd2)
+                for segment in unescaped.split('|').chain(unescaped.split(';')).chain(unescaped.split("&&")) {
+                    let seg = segment.trim();
+                    if let Some(first_word) = seg.split_whitespace().next() {
+                        let clean = first_word
+                            .trim_matches('"')
+                            .trim_matches('\'')
+                            .rsplit(['/', '\\'])
+                            .next()
+                            .unwrap_or(first_word)
+                            .trim_matches('"')
+                            .trim_matches('\'')
+                            .trim_end_matches(".exe")
+                            .trim_end_matches(".cmd")
+                            .trim_end_matches(".bat");
+                        if !clean.is_empty() {
+                            list.push(format!("command({clean})"));
+                            list.push(format!("command({clean} *)"));
+                        }
                     }
                 }
             }
@@ -210,15 +218,23 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
             .or_else(|| args.get("file_path"))
             .or_else(|| args.get("AbsolutePath"))
             .and_then(Value::as_str)
-            .map(str::trim);
+            .map(|s| s.trim().trim_matches('"').trim_matches('\'').trim());
 
         if let Some(target) = target {
             if !target.is_empty() {
                 if name.contains("write") || name.contains("edit") || name.contains("replace") {
                     list.push(format!("write_file({target})"));
                     list.push("write_file(*)".into());
+                    list.push(format!("write_to_file({target})"));
+                    list.push("write_to_file(*)".into());
+                    list.push(format!("replace_file_content({target})"));
+                    list.push("replace_file_content(*)".into());
+                    list.push(format!("{name}({target})"));
+                    list.push(format!("{name}(*)"));
                 } else if name.contains("read") || name.contains("view") {
                     list.push(format!("read_file({target})"));
+                    list.push(format!("view_file({target})"));
+                    list.push(format!("{name}({target})"));
                 }
             }
         }
@@ -429,6 +445,33 @@ mod tests {
         let overrides_ide = val_ide["permissionOverrides"].as_array().unwrap();
         assert!(overrides_ide.contains(&json!("command(Set-Content)")));
         assert!(overrides_ide.contains(&json!("command(Set-Content *)")));
+
+        // Test with piped IDE command from e81f191e
+        let tc_pipe = json!({
+            "name": "run_command",
+            "args": {
+                "CommandLine": "\"\\\"Coucou\\\" | Out-File -FilePath teste.txt\""
+            }
+        });
+        let out_pipe = stdout("antigravity", "PermissionRequest", Some("allow"), None, Some(&tc_pipe)).unwrap();
+        let val_pipe: Value = serde_json::from_str(&out_pipe).unwrap();
+        let overrides_pipe = val_pipe["permissionOverrides"].as_array().unwrap();
+        assert!(overrides_pipe.contains(&json!("command(Out-File)")));
+        assert!(overrides_pipe.contains(&json!("command(Out-File *)")));
+
+        // Test with write_to_file
+        let tc_write = json!({
+            "name": "write_to_file",
+            "args": {
+                "TargetFile": "\"c:\\Code\\dinheirizz\\relatorio.json\""
+            }
+        });
+        let out_write = stdout("antigravity", "PermissionRequest", Some("allow"), None, Some(&tc_write)).unwrap();
+        let val_write: Value = serde_json::from_str(&out_write).unwrap();
+        let overrides_write = val_write["permissionOverrides"].as_array().unwrap();
+        assert!(overrides_write.contains(&json!("write_to_file(c:\\Code\\dinheirizz\\relatorio.json)")));
+        assert!(overrides_write.contains(&json!("write_to_file(*)")));
+        assert!(overrides_write.contains(&json!("write_file(*)")));
     }
 
     #[test]

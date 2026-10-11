@@ -46,6 +46,7 @@ pub fn event(name: &str) -> &str {
 /// Keys of Antigravity's `toolCall.args` the island reads under another name.
 const ARG_ALIASES: &[(&str, &str)] = &[
     ("CommandLine", "command"),
+    ("TargetFile", "file_path"),
     ("FilePath", "file_path"),
     ("Path", "path"),
     ("Url", "url"),
