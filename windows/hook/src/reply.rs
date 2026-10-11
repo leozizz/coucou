@@ -180,16 +180,27 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
             let cmd = cmd.trim();
 
             if !cmd.is_empty() {
-                // 1. The full exact command line approved
+                // 1. Full command line overrides (both command and run_command prefixes)
                 list.push(format!("command({cmd})"));
-                // Also unescaped quotes version (e.g. \"Coucou ...\" -> "Coucou ...")
+                list.push(format!("run_command({cmd})"));
+                list.push(format!("{name}({cmd})"));
+
                 let unescaped = cmd.replace(r#"\""#, "\"").replace(r#"\'"#, "'");
                 if unescaped != cmd {
                     list.push(format!("command({unescaped})"));
+                    list.push(format!("run_command({unescaped})"));
+                    list.push(format!("{name}({unescaped})"));
                 }
 
-                // 2. The base binaries (including in pipelines: cmd1 | cmd2)
-                for segment in unescaped.split('|').chain(unescaped.split(';')).chain(unescaped.split("&&")) {
+                // Tool-level wildcard grants
+                list.push("run_command".into());
+                list.push("run_command(*)".into());
+                list.push(name.to_string());
+                list.push(format!("{name}(*)"));
+
+                // 2. Base binaries in pipeline chains (cmd1 | cmd2, cmd1 && cmd2, cmd1; cmd2)
+                let normalized_pipeline = unescaped.replace("&&", "|").replace(';', "|");
+                for segment in normalized_pipeline.split('|') {
                     let seg = segment.trim();
                     if let Some(first_word) = seg.split_whitespace().next() {
                         let clean = first_word
@@ -206,6 +217,13 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
                         if !clean.is_empty() {
                             list.push(format!("command({clean})"));
                             list.push(format!("command({clean} *)"));
+                            list.push(format!("run_command({clean})"));
+                            list.push(format!("run_command({clean} *)"));
+                            list.push(format!("{name}({clean})"));
+                            list.push(format!("{name}({clean} *)"));
+                            list.push(clean.to_string());
+                            list.push(format!("{clean} *"));
+                            list.push(format!("{clean}(*)"));
                         }
                     }
                 }
@@ -280,7 +298,8 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
         }
     }
 
-    list.dedup();
+    let mut seen = std::collections::HashSet::new();
+    list.retain(|item| seen.insert(item.clone()));
     list
 }
 
@@ -445,6 +464,9 @@ mod tests {
         let overrides_ide = val_ide["permissionOverrides"].as_array().unwrap();
         assert!(overrides_ide.contains(&json!("command(Set-Content)")));
         assert!(overrides_ide.contains(&json!("command(Set-Content *)")));
+        assert!(overrides_ide.contains(&json!("run_command(Set-Content)")));
+        assert!(overrides_ide.contains(&json!("run_command(Set-Content *)")));
+        assert!(overrides_ide.contains(&json!("run_command(*)")));
 
         // Test with piped IDE command from e81f191e
         let tc_pipe = json!({
@@ -458,6 +480,7 @@ mod tests {
         let overrides_pipe = val_pipe["permissionOverrides"].as_array().unwrap();
         assert!(overrides_pipe.contains(&json!("command(Out-File)")));
         assert!(overrides_pipe.contains(&json!("command(Out-File *)")));
+        assert!(overrides_pipe.contains(&json!("run_command(Out-File *)")));
 
         // Test with write_to_file
         let tc_write = json!({

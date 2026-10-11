@@ -48,6 +48,8 @@ const ARG_ALIASES: &[(&str, &str)] = &[
     ("CommandLine", "command"),
     ("TargetFile", "file_path"),
     ("FilePath", "file_path"),
+    ("AbsolutePath", "file_path"),
+    ("DirectoryPath", "path"),
     ("Path", "path"),
     ("Url", "url"),
     ("Query", "query"),
