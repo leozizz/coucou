@@ -1,9 +1,11 @@
 // Windows media & desktop integrations: Spotify and WhatsApp.
 //
 // Spotify:
-// - Without API keys or OAuth: reads window title ("Artist - Track") of
-//   SpotifyMainWindow.
-// - Media controls: uses Win32 SendInput with virtual media keys (VK_MEDIA_*).
+// - Uses Windows Runtime (WinRT) GlobalSystemMediaTransportControlsSessionManager (GSMTC)
+//   to detect track metadata, position, duration, playing status, repeat, and shuffle.
+// - Supports both Spotify Desktop and Spotify Windows Store (UWP).
+// - Supports direct GSMTC control (Play, Pause, Toggle, Next, Prev, Seek, Shuffle, Repeat)
+//   with fallback to Win32 media keys and window title scanner.
 //
 // WhatsApp:
 // - Without API keys or login: detects browser tabs ("(N) WhatsApp") or desktop app
@@ -11,6 +13,12 @@
 
 use serde::Serialize;
 use windows::core::BOOL;
+use windows::Media::Control::{
+    GlobalSystemMediaTransportControlsSession,
+    GlobalSystemMediaTransportControlsSessionManager,
+    GlobalSystemMediaTransportControlsSessionPlaybackStatus,
+};
+use windows::Media::MediaPlaybackAutoRepeatMode;
 use windows::Win32::Foundation::{HWND, LPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY,
@@ -27,6 +35,83 @@ pub struct NowPlaying {
     pub playing: bool,
     pub artist: String,
     pub title: String,
+    pub album: String,
+    pub duration: f64,
+    pub position: f64,
+    pub shuffle: bool,
+    pub repeat: bool,
+}
+
+/// Finds the active Spotify GSMTC session if available.
+fn spotify_session() -> Option<GlobalSystemMediaTransportControlsSession> {
+    let mgr_async = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().ok()?;
+    let mgr = mgr_async.get().ok()?;
+    let sessions = mgr.GetSessions().ok()?;
+
+    for session in sessions {
+        let app_id = session.SourceAppUserModelId().unwrap_or_default().to_string();
+        if app_id.to_lowercase().contains("spotify") {
+            return Some(session);
+        }
+    }
+    None
+}
+
+/// Reads current playback details from Windows Media Transport Controls (GSMTC).
+fn now_playing_gsmtc() -> Option<NowPlaying> {
+    let session = spotify_session()?;
+
+    let playback_info = session.GetPlaybackInfo().ok();
+    let status = playback_info
+        .as_ref()
+        .and_then(|info| info.PlaybackStatus().ok())
+        .unwrap_or(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Closed);
+
+    let playing = status == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+
+    let shuffle = playback_info
+        .as_ref()
+        .and_then(|info| info.IsShuffleActive().ok())
+        .and_then(|ref_bool| ref_bool.Value().ok())
+        .unwrap_or(false);
+
+    let repeat = playback_info
+        .as_ref()
+        .and_then(|info| info.AutoRepeatMode().ok())
+        .and_then(|ref_mode| ref_mode.Value().ok())
+        .map(|m| m != MediaPlaybackAutoRepeatMode::None)
+        .unwrap_or(false);
+
+    let media_async = session.TryGetMediaPropertiesAsync().ok()?;
+    let media = media_async.get().ok()?;
+
+    let artist = media.Artist().unwrap_or_default().to_string();
+    let title = media.Title().unwrap_or_default().to_string();
+    let album = media.AlbumTitle().unwrap_or_default().to_string();
+
+    let mut position = 0.0f64;
+    let mut duration = 0.0f64;
+
+    if let Ok(timeline) = session.GetTimelineProperties() {
+        if let Ok(pos_ts) = timeline.Position() {
+            position = (pos_ts.Duration.max(0) as f64) / 10_000_000.0;
+        }
+        if let Ok(end_ts) = timeline.EndTime() {
+            duration = (end_ts.Duration.max(0) as f64) / 10_000_000.0;
+        }
+    }
+
+    Some(NowPlaying {
+        running: true,
+        playing,
+        artist,
+        title,
+        album,
+        duration,
+        position,
+        shuffle,
+        repeat,
+    })
 }
 
 struct SpotifyFound {
@@ -39,8 +124,6 @@ unsafe extern "system" fn spotify_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL 
     if found.hwnd.is_some() {
         return false.into();
     }
-    // We do not check IsWindowVisible because minimized or background Spotify
-    // windows still exist and report title correctly.
     let mut class = [0u16; 64];
     let class_len = unsafe { GetClassNameW(hwnd, &mut class) };
     if class_len == 0 {
@@ -59,8 +142,8 @@ unsafe extern "system" fn spotify_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL 
     true.into()
 }
 
-/// Polls the Spotify desktop window on Windows.
-pub fn now_playing() -> NowPlaying {
+/// Fallback: Polls the Spotify desktop window on Windows via legacy window title.
+fn now_playing_win32() -> NowPlaying {
     let mut found = SpotifyFound { hwnd: None, title: None };
     unsafe {
         let _ = EnumWindows(
@@ -78,8 +161,7 @@ pub fn now_playing() -> NowPlaying {
         return NowPlaying {
             running: true,
             playing: false,
-            artist: String::new(),
-            title: String::new(),
+            ..Default::default()
         };
     }
 
@@ -89,10 +171,10 @@ pub fn now_playing() -> NowPlaying {
             playing: true,
             artist: "Spotify".to_string(),
             title: "Advertisement".to_string(),
+            ..Default::default()
         };
     }
 
-    // "Artist - Title" or "Artist – Title"
     for sep in [" - ", " – "] {
         if let Some((artist, track)) = title.split_once(sep) {
             let artist = artist.trim();
@@ -103,18 +185,105 @@ pub fn now_playing() -> NowPlaying {
                     playing: true,
                     artist: artist.to_string(),
                     title: track.to_string(),
+                    ..Default::default()
                 };
             }
         }
     }
 
-    // Window has a custom title but not standard separator
     NowPlaying {
         running: true,
         playing: true,
         artist: String::new(),
         title,
+        ..Default::default()
     }
+}
+
+/// Polls what is currently playing on Spotify.
+pub fn now_playing() -> NowPlaying {
+    if let Some(np) = now_playing_gsmtc() {
+        return np;
+    }
+    now_playing_win32()
+}
+
+/// Controls Spotify via WinRT GSMTC commands where available, falling back to Media Keys.
+pub fn control(action: &str, value: Option<f64>) -> bool {
+    if let Some(session) = spotify_session() {
+        match action {
+            "playPause" | "playpause" | "toggle" => {
+                if let Ok(op) = session.TryTogglePlayPauseAsync() {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "play" => {
+                if let Ok(op) = session.TryPlayAsync() {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "pause" => {
+                if let Ok(op) = session.TryPauseAsync() {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "next" => {
+                if let Ok(op) = session.TrySkipNextAsync() {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "prev" | "previous" => {
+                if let Ok(op) = session.TrySkipPreviousAsync() {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "seek" => {
+                if let Some(secs) = value {
+                    let ticks = (secs.max(0.0) * 10_000_000.0) as i64;
+                    if let Ok(op) = session.TryChangePlaybackPositionAsync(ticks) {
+                        if let Ok(res) = op.get() {
+                            return res;
+                        }
+                    }
+                }
+            }
+            "shuffle" => {
+                let on = value.unwrap_or(0.0) > 0.5;
+                if let Ok(op) = session.TryChangeShuffleActiveAsync(on) {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            "repeat" => {
+                let on = value.unwrap_or(0.0) > 0.5;
+                let mode = if on {
+                    MediaPlaybackAutoRepeatMode::Track
+                } else {
+                    MediaPlaybackAutoRepeatMode::None
+                };
+                if let Ok(op) = session.TryChangeAutoRepeatModeAsync(mode) {
+                    if let Ok(res) = op.get() {
+                        return res;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Fallback to media keys
+    press(action).is_ok()
 }
 
 /// Sends global Windows media key events (play/pause, next, previous).
@@ -170,7 +339,7 @@ pub fn open_spotify() -> bool {
     true
 }
 
-/// Checks if Spotify is installed (checks %APPDATA%\Spotify\Spotify.exe or PATH).
+/// Checks if Spotify is installed (checks %APPDATA%\Spotify\Spotify.exe, WindowsApps or PATH).
 pub fn spotify_installed() -> bool {
     if let Ok(appdata) = std::env::var("APPDATA") {
         let path = std::path::Path::new(&appdata).join("Spotify").join("Spotify.exe");
@@ -185,6 +354,16 @@ pub fn spotify_installed() -> bool {
             .join("Spotify.exe");
         if path.exists() {
             return true;
+        }
+        // Microsoft Store Spotify package check
+        let store_path = std::path::Path::new(&localappdata)
+            .join("Packages");
+        if let Ok(entries) = std::fs::read_dir(store_path) {
+            for entry in entries.flatten() {
+                if entry.file_name().to_string_lossy().to_lowercase().contains("spotify") {
+                    return true;
+                }
+            }
         }
     }
     crate::platform::find_on_path("spotify").is_some()

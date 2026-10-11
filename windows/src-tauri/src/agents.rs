@@ -267,7 +267,7 @@ impl Agent {
     /// Whether the island can answer this agent's permission requests. Must
     /// match `takes_decisions` in the relay (hook/src/reply.rs).
     fn approvals(self) -> bool {
-        matches!(self, Agent::Codex | Agent::Copilot | Agent::Muse)
+        matches!(self, Agent::Codex | Agent::Copilot | Agent::Muse | Agent::Antigravity)
     }
 }
 
@@ -524,10 +524,13 @@ const ANTIGRAVITY_LIFECYCLE_EVENTS: &[&str] = &["PreInvocation", "PostInvocation
 
 fn antigravity_block(relay: &Relay) -> Value {
     let handler = |event: &str| {
+        // PreToolUse waits for human approval in the island; give it 120s.
+        // Other lifecycle events fire and forget within 10s.
+        let timeout = if event == "PreToolUse" { 120 } else { 10 };
         json!({
             "type": "command",
             "command": relay.command(Shell::Cmd, &format!("--agent antigravity {event}")),
-            "timeout": 10,
+            "timeout": timeout,
         })
     };
     let mut block = Map::new();
@@ -1190,9 +1193,9 @@ mod tests {
     }
 
     #[test]
-    fn only_codex_copilot_and_muse_take_approvals() {
+    fn only_codex_copilot_muse_and_antigravity_take_approvals() {
         let with: Vec<&str> = Agent::ALL.iter().filter(|a| a.approvals()).map(|a| a.id()).collect();
-        assert_eq!(with, ["codex", "copilot", "muse"]);
+        assert_eq!(with, ["codex", "copilot", "muse", "antigravity"]);
     }
 
     #[test]

@@ -446,8 +446,11 @@ pub async fn spotify_control(app: AppHandle, action: String, value: Option<f64>)
     }
     #[cfg(target_os = "windows")]
     {
-        let _ = (app, value);
-        crate::media::press(&action).is_ok()
+        let res = crate::media::control(&action, value);
+        std::thread::sleep(std::time::Duration::from_millis(60));
+        let state = windows::current_state();
+        emit_state(&app, &state);
+        res
     }
     #[cfg(all(not(target_os = "linux"), not(target_os = "windows")))]
     {
@@ -521,18 +524,20 @@ pub mod windows {
             running: np.running,
             installed: installed || np.running,
             playing: np.playing,
-            position: 0.0,
+            position: np.position,
             position_at: now_ms(),
+            shuffle: np.shuffle,
+            repeat: np.repeat,
             volume: 70,
             ..Default::default()
         };
-        if np.playing && (!np.title.is_empty() || !np.artist.is_empty()) {
+        if !np.title.is_empty() || !np.artist.is_empty() {
             state.track = Some(Track {
                 id: format!("spotify:track:{}:{}", np.artist, np.title),
                 title: if np.title.is_empty() { "Spotify".into() } else { np.title },
                 artist: np.artist,
-                album: String::new(),
-                duration: 0.0,
+                album: np.album,
+                duration: np.duration,
                 art_url: None,
                 object_path: String::new(),
             });
