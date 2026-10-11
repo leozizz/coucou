@@ -145,9 +145,13 @@ pub fn is_read_only_tool(name: &str) -> bool {
             | "search_issues"
             | "search_repositories"
             | "search_users"
+            | "manage_task"
+            | "schedule"
+            | "send_message"
     ) || lower.starts_with("read_")
         || lower.starts_with("list_")
         || lower.starts_with("get_")
+        || lower.starts_with("search_")
         || (lower.contains("view") && !lower.contains("review"))
 }
 

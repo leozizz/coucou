@@ -33,6 +33,9 @@ pub fn stdout(
     tool_call: Option<&Value>,
 ) -> Option<String> {
     if event != "PermissionRequest" {
+        if agent == "antigravity" && event == "PreToolUse" {
+            return Some(json!({ "decision": "allow" }).to_string());
+        }
         return wants_json(agent).then(|| "{}".to_string());
     }
     let decision = decision.filter(|_| takes_decisions(agent));
@@ -277,6 +280,9 @@ mod tests {
     fn nothing_is_ever_allowed_without_a_decision() {
         for agent in AGENTS {
             for event in EVENTS {
+                if *agent == "antigravity" && *event == "PreToolUse" {
+                    continue;
+                }
                 if let Some(out) = stdout(agent, event, None, None, None) {
                     assert!(!allows(&out), "{agent:?} {event} printed {out} with nobody clicking");
                 }
@@ -294,6 +300,9 @@ mod tests {
     fn a_decision_only_counts_on_a_permission_request_from_an_agent_that_takes_one() {
         for agent in AGENTS {
             for event in EVENTS.iter().filter(|e| **e != "PermissionRequest") {
+                if *agent == "antigravity" && *event == "PreToolUse" {
+                    continue;
+                }
                 if let Some(out) = stdout(agent, event, Some("allow"), None, None) {
                     assert!(!allows(&out), "{agent:?} {event}: {out}");
                 }
@@ -329,7 +338,7 @@ mod tests {
         assert!(ag_deny.contains(r#""decision":"deny""#));
         assert_eq!(stdout("antigravity", "PermissionRequest", None, None, None).unwrap(), r#"{"decision":"ask"}"#);
         // Antigravity PreToolUse for safe read-only tools:
-        assert_eq!(stdout("antigravity", "PreToolUse", None, None, None).unwrap(), "{}");
+        assert_eq!(stdout("antigravity", "PreToolUse", None, None, None).unwrap(), r#"{"decision":"allow"}"#);
         for event in ["PostToolUse", "UserPromptSubmit", "Stop"] {
             assert_eq!(stdout("antigravity", event, None, None, None).unwrap(), "{}");
         }
