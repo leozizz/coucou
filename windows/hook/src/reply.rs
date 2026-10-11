@@ -197,10 +197,51 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
             if !target.is_empty() {
                 if name.contains("write") || name.contains("edit") || name.contains("replace") {
                     list.push(format!("write_file({target})"));
+                    list.push("write_file(*)".into());
                 } else if name.contains("read") || name.contains("view") {
                     list.push(format!("read_file({target})"));
                 }
             }
+        }
+
+        // MCP tool calls: call_mcp_tool with ServerName and ToolName
+        if name.eq_ignore_ascii_case("call_mcp_tool") {
+            let server = args
+                .get("ServerName")
+                .or_else(|| args.get("server_name"))
+                .or_else(|| args.get("server"))
+                .and_then(Value::as_str)
+                .map(|s| s.trim().trim_matches('"'));
+            let sub_tool = args
+                .get("ToolName")
+                .or_else(|| args.get("tool_name"))
+                .or_else(|| args.get("tool"))
+                .and_then(Value::as_str)
+                .map(|s| s.trim().trim_matches('"'));
+
+            if let Some(srv) = server {
+                list.push(format!("mcp({srv}/*)"));
+                if let Some(t) = sub_tool {
+                    list.push(format!("mcp({srv}/{t})"));
+                }
+            }
+            list.push("mcp(*)".into());
+            list.push("mcp(*/*)".into());
+            list.push("call_mcp_tool(*)".into());
+            list.push("CallMcpTool(*)".into());
+            list.push("call_mcp_tool".into());
+            list.push("CallMcpTool".into());
+        } else if name.starts_with("mcp_") {
+            let parts: Vec<&str> = name.split('_').collect();
+            if parts.len() >= 3 {
+                let srv = parts[1];
+                let t = parts[2..].join("_");
+                list.push(format!("mcp({srv}/{t})"));
+                list.push(format!("mcp({srv}/*)"));
+            }
+            list.push(format!("{name}(*)"));
+            list.push(name.to_string());
+            list.push("mcp(*)".into());
         }
     }
 
@@ -334,6 +375,22 @@ mod tests {
         assert!(overrides_git.contains(&json!("command(git commit -m \"test\")")));
         assert!(overrides_git.contains(&json!("command(git)")));
         assert!(overrides_git.contains(&json!("command(git *)")));
+
+        // Test with MCP tool call
+        let tc_mcp = json!({
+            "name": "call_mcp_tool",
+            "args": {
+                "ServerName": "\"github\"",
+                "ToolName": "\"create_issue\""
+            }
+        });
+        let out_mcp = stdout("antigravity", "PermissionRequest", Some("allow"), None, Some(&tc_mcp)).unwrap();
+        let val_mcp: Value = serde_json::from_str(&out_mcp).unwrap();
+        let overrides_mcp = val_mcp["permissionOverrides"].as_array().unwrap();
+        assert!(overrides_mcp.contains(&json!("mcp(github/create_issue)")));
+        assert!(overrides_mcp.contains(&json!("mcp(github/*)")));
+        assert!(overrides_mcp.contains(&json!("mcp(*)")));
+        assert!(overrides_mcp.contains(&json!("call_mcp_tool(*)")));
     }
 
     #[test]

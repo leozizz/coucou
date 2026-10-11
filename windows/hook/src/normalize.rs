@@ -158,12 +158,28 @@ pub fn refine(event: &str, map: &Map<String, Value>) -> String {
         return "StopFailure".into();
     }
     // Antigravity gates tool execution on PreToolUse: mutating / executing tools
-    // (run_command, write_file) become PermissionRequest so the island displays approval cards.
-    // Read-only tools (view_file, search_web) stay PreToolUse and are allowed immediately.
+    // (run_command, write_file, mutating MCP tools) become PermissionRequest so the island
+    // displays approval cards.
+    // Read-only tools (view_file, search_web, read-only MCP queries) stay PreToolUse and are allowed immediately.
     if event == "PreToolUse" && map.get("coucou_agent").and_then(Value::as_str) == Some("antigravity") {
         if let Some(tool) = map.get("tool_name").and_then(Value::as_str) {
             if is_read_only_tool(tool) {
                 return "PreToolUse".into();
+            }
+            if tool.eq_ignore_ascii_case("call_mcp_tool") {
+                if let Some(input) = map.get("tool_input").and_then(Value::as_object) {
+                    let sub_tool = input
+                        .get("ToolName")
+                        .or_else(|| input.get("tool_name"))
+                        .or_else(|| input.get("tool"))
+                        .and_then(Value::as_str)
+                        .map(|s| s.trim().trim_matches('"'));
+                    if let Some(sub) = sub_tool {
+                        if is_read_only_tool(sub) {
+                            return "PreToolUse".into();
+                        }
+                    }
+                }
             }
         }
         return "PermissionRequest".into();
@@ -305,5 +321,28 @@ mod tests {
         }
         assert_eq!(refine("PreToolUse", &obj(json!({ "status": "error" }))), "PreToolUse");
         assert_eq!(refine("PreToolUse", &obj(json!({ "coucou_agent": "antigravity" }))), "PermissionRequest");
+    }
+
+    #[test]
+    fn antigravity_mcp_read_only_tools_bypass_permission_request() {
+        let read_mcp = obj(json!({
+            "coucou_agent": "antigravity",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "\"github\"",
+                "ToolName": "\"list_issues\""
+            }
+        }));
+        assert_eq!(refine("PreToolUse", &read_mcp), "PreToolUse");
+
+        let mutating_mcp = obj(json!({
+            "coucou_agent": "antigravity",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "github",
+                "ToolName": "create_issue"
+            }
+        }));
+        assert_eq!(refine("PreToolUse", &mutating_mcp), "PermissionRequest");
     }
 }
