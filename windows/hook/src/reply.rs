@@ -33,11 +33,6 @@ pub fn stdout(
     tool_call: Option<&Value>,
 ) -> Option<String> {
     if event != "PermissionRequest" {
-        // Antigravity reads "{}" on PreToolUse as a denial. "ask" keeps its own prompt
-        // (and the user's Always Allow): Coucou never allows a tool by itself.
-        if agent.eq_ignore_ascii_case("antigravity") && event == "PreToolUse" {
-            return Some(r#"{"decision":"ask"}"#.to_string());
-        }
         return wants_json(agent).then(|| "{}".to_string());
     }
     let decision = decision.filter(|_| takes_decisions(agent));
@@ -292,8 +287,8 @@ mod tests {
         let ag_deny = stdout("antigravity", "PermissionRequest", Some("deny"), None, None).unwrap();
         assert!(ag_deny.contains(r#""decision":"deny""#));
         assert_eq!(stdout("antigravity", "PermissionRequest", None, None, None).unwrap(), r#"{"decision":"ask"}"#);
-        // Antigravity PreToolUse fallback without decision:
-        assert_eq!(stdout("antigravity", "PreToolUse", None, None, None).unwrap(), r#"{"decision":"ask"}"#);
+        // Antigravity PreToolUse for safe read-only tools:
+        assert_eq!(stdout("antigravity", "PreToolUse", None, None, None).unwrap(), "{}");
         for event in ["PostToolUse", "UserPromptSubmit", "Stop"] {
             assert_eq!(stdout("antigravity", event, None, None, None).unwrap(), "{}");
         }

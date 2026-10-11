@@ -51,6 +51,8 @@ pub struct NowPlaying {
     pub position: f64,
     pub shuffle: bool,
     pub repeat: bool,
+    #[serde(skip)]
+    pub thumbnail: Option<Vec<u8>>,
 }
 
 /// Finds the active Spotify GSMTC session if available.
@@ -112,6 +114,29 @@ fn now_playing_gsmtc() -> Option<NowPlaying> {
         }
     }
 
+    let mut thumbnail = None;
+    if let Ok(thumb_ref) = media.Thumbnail() {
+        if let Ok(stream_op) = thumb_ref.OpenReadAsync() {
+            if let Ok(stream) = stream_op.get() {
+                if let Ok(size) = stream.Size() {
+                    let size = size as usize;
+                    if size > 0 && size <= 3 * 1024 * 1024 {
+                        if let Ok(reader) = windows::Storage::Streams::DataReader::CreateDataReader(&stream) {
+                            if let Ok(load_op) = reader.LoadAsync(size as u32) {
+                                if load_op.get().is_ok() {
+                                    let mut buf = vec![0u8; size];
+                                    if reader.ReadBytes(&mut buf).is_ok() {
+                                        thumbnail = Some(buf);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Some(NowPlaying {
         running: true,
         playing,
@@ -122,6 +147,7 @@ fn now_playing_gsmtc() -> Option<NowPlaying> {
         position,
         shuffle,
         repeat,
+        thumbnail,
     })
 }
 

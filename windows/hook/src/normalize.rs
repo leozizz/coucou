@@ -121,15 +121,51 @@ pub fn fields(map: &mut Map<String, Value>, env: &dyn Fn(&str) -> Option<String>
     }
 }
 
+/// Tools that only read data or query APIs without modifying environment/files.
+pub fn is_read_only_tool(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    matches!(
+        lower.as_str(),
+        "view_file"
+            | "read_file"
+            | "view"
+            | "read"
+            | "search_web"
+            | "search"
+            | "read_url_content"
+            | "read_resource"
+            | "list_resources"
+            | "list_plugin_accounts"
+            | "list_tools"
+            | "get_file_contents"
+            | "list_commits"
+            | "list_issues"
+            | "list_pull_requests"
+            | "search_code"
+            | "search_issues"
+            | "search_repositories"
+            | "search_users"
+    ) || lower.starts_with("read_")
+        || lower.starts_with("list_")
+        || lower.starts_with("get_")
+        || (lower.contains("view") && !lower.contains("review"))
+}
+
 /// The event once the payload is known: a stop that reports an error (Cursor's
 /// `status: "error"`) is a StopFailure.
 pub fn refine(event: &str, map: &Map<String, Value>) -> String {
     if event == "Stop" && map.get("status").and_then(Value::as_str) == Some("error") {
         return "StopFailure".into();
     }
-    // Antigravity gates tool execution on PreToolUse: treat as PermissionRequest
-    // so the island displays approval cards (Allow / Deny / Always).
+    // Antigravity gates tool execution on PreToolUse: mutating / executing tools
+    // (run_command, write_file) become PermissionRequest so the island displays approval cards.
+    // Read-only tools (view_file, search_web) stay PreToolUse and are allowed immediately.
     if event == "PreToolUse" && map.get("coucou_agent").and_then(Value::as_str) == Some("antigravity") {
+        if let Some(tool) = map.get("tool_name").and_then(Value::as_str) {
+            if is_read_only_tool(tool) {
+                return "PreToolUse".into();
+            }
+        }
         return "PermissionRequest".into();
     }
     event.to_string()
