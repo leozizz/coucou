@@ -12,7 +12,8 @@
 //   windows, extracting unread message counts.
 
 use serde::Serialize;
-use windows::core::BOOL;
+use std::sync::atomic::{AtomicI32, Ordering};
+use windows::core::{Interface, BOOL};
 use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSession,
     GlobalSystemMediaTransportControlsSessionManager,
@@ -20,6 +21,14 @@ use windows::Media::Control::{
 };
 use windows::Media::MediaPlaybackAutoRepeatMode;
 use windows::Win32::Foundation::{HWND, LPARAM};
+use windows::Win32::Media::Audio::{
+    eMultimedia, eRender, IAudioSessionControl2, IAudioSessionEnumerator, IAudioSessionManager2,
+    IMMDeviceEnumerator, ISimpleAudioVolume, MMDeviceEnumerator,
+};
+use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+use windows::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY,
 };
@@ -27,6 +36,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetClassNameW, GetWindowTextW, IsWindowVisible, SetForegroundWindow, ShowWindow,
     SW_RESTORE,
 };
+
+static SPOTIFY_VOLUME: AtomicI32 = AtomicI32::new(70);
 
 #[derive(Serialize, Clone, Debug, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -208,8 +219,90 @@ pub fn now_playing() -> NowPlaying {
     now_playing_win32()
 }
 
+fn spotify_pids() -> Vec<u32> {
+    let mut pids = Vec::new();
+    unsafe {
+        let Ok(snapshot) = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) else { return pids };
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+        let mut more = Process32FirstW(snapshot, &mut entry).is_ok();
+        while more {
+            let len = entry.szExeFile.iter().position(|c| *c == 0).unwrap_or(entry.szExeFile.len());
+            let name = String::from_utf16_lossy(&entry.szExeFile[..len]);
+            if name.eq_ignore_ascii_case("spotify.exe") {
+                pids.push(entry.th32ProcessID);
+            }
+            more = Process32NextW(snapshot, &mut entry).is_ok();
+        }
+        let _ = windows::Win32::Foundation::CloseHandle(snapshot);
+    }
+    pids
+}
+
+fn with_spotify_audio_session<F, R>(f: F) -> Option<R>
+where
+    F: FnOnce(&ISimpleAudioVolume) -> Option<R>,
+{
+    unsafe {
+        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
+        let device = enumerator.GetDefaultAudioEndpoint(eRender, eMultimedia).ok()?;
+        let session_manager: IAudioSessionManager2 =
+            device.Activate(CLSCTX_ALL, None).ok()?;
+        let session_enum: IAudioSessionEnumerator =
+            session_manager.GetSessionEnumerator().ok()?;
+        let count = session_enum.GetCount().ok()?;
+
+        let pids = spotify_pids();
+
+        for i in 0..count {
+            if let Ok(session) = session_enum.GetSession(i) {
+                if let Ok(control2) = session.cast::<IAudioSessionControl2>() {
+                    if let Ok(pid) = control2.GetProcessId() {
+                        if pids.contains(&pid) {
+                            if let Ok(simple_vol) = session.cast::<ISimpleAudioVolume>() {
+                                return f(&simple_vol);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
+pub fn get_volume() -> i32 {
+    if let Some(vol) = with_spotify_audio_session(|v| {
+        if let Ok(level) = unsafe { v.GetMasterVolume() } {
+            Some((level * 100.0).round().clamp(0.0, 100.0) as i32)
+        } else {
+            None
+        }
+    }) {
+        SPOTIFY_VOLUME.store(vol, Ordering::Relaxed);
+        return vol;
+    }
+    SPOTIFY_VOLUME.load(Ordering::Relaxed)
+}
+
+pub fn set_volume(pct: f64) -> bool {
+    let vol_int = pct.round().clamp(0.0, 100.0) as i32;
+    SPOTIFY_VOLUME.store(vol_int, Ordering::Relaxed);
+    let level = (pct / 100.0).clamp(0.0, 1.0) as f32;
+    with_spotify_audio_session(|v| {
+        unsafe { v.SetMasterVolume(level, std::ptr::null()) }.ok()
+    }).is_some()
+}
+
 /// Controls Spotify via WinRT GSMTC commands where available, falling back to Media Keys.
 pub fn control(action: &str, value: Option<f64>) -> bool {
+    if action == "volume" {
+        return set_volume(value.unwrap_or(70.0));
+    }
     if let Some(session) = spotify_session() {
         match action {
             "playPause" | "playpause" | "toggle" => {

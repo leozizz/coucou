@@ -97,6 +97,8 @@ struct Event {
     name: String,
     /// For Claude Code's AskUserQuestion, the question as it was asked.
     question: Option<Value>,
+    /// Tool call name and input, for agents needing specific overrides (Antigravity).
+    tool_call: Option<Value>,
 }
 
 fn main() {
@@ -113,7 +115,7 @@ fn main() {
         // Nothing we could forward. An agent that needs JSON still gets its
         // "no opinion" — Copilot is fail-closed and would deny without it.
         let name = normalize::event(&args.event);
-        print(reply::stdout(&args.agent, name, None, None));
+        print(reply::stdout(&args.agent, name, None, None, None));
         std::process::exit(0);
     };
 
@@ -133,7 +135,7 @@ fn main() {
     });
 
     let decision = rx.recv_timeout(budget).ok().flatten();
-    print(reply::stdout(&args.agent, &event.name, decision.as_deref(), event.question.as_ref()));
+    print(reply::stdout(&args.agent, &event.name, decision.as_deref(), event.question.as_ref(), event.tool_call.as_ref()));
     std::process::exit(0);
 }
 
@@ -193,13 +195,19 @@ fn prepare(raw: &[u8], args: &Args, env: &dyn Fn(&str) -> Option<String>, cwd: &
         .then(|| map.get("tool_input").cloned())
         .flatten();
 
+    let tool_call = map.get("toolCall").cloned().or_else(|| {
+        let name = map.get("tool_name").and_then(Value::as_str)?;
+        let input = map.get("tool_input").cloned()?;
+        Some(serde_json::json!({ "name": name, "args": input }))
+    });
+
     // Every string is capped, except the edit text of a finished Edit /
     // MultiEdit / Write, which the live diff needs whole (within its own limits).
     truncate_payload(&mut payload, &name);
 
     let mut line = payload.to_string();
     line.push('\n');
-    Some(Event { line, name, question })
+    Some(Event { line, name, question, tool_call })
 }
 
 /// Which terminal the session runs in. Unlike macOS, Coucou here accepts events

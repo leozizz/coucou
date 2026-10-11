@@ -528,7 +528,7 @@ pub mod windows {
             position_at: now_ms(),
             shuffle: np.shuffle,
             repeat: np.repeat,
-            volume: 70,
+            volume: crate::media::get_volume(),
             ..Default::default()
         };
         if !np.title.is_empty() || !np.artist.is_empty() {
