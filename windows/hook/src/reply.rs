@@ -161,29 +161,45 @@ pub fn antigravity_overrides(tool_call: Option<&Value>) -> Vec<String> {
     let args = tc.get("args").and_then(Value::as_object);
 
     if let Some(args) = args {
-        let cmd = args
+        let raw_cmd = args
             .get("CommandLine")
             .or_else(|| args.get("command"))
             .or_else(|| args.get("cmd"))
             .and_then(Value::as_str)
             .map(str::trim);
 
-        if let Some(cmd) = cmd {
+        if let Some(mut cmd) = raw_cmd {
+            // Strip outer matching quotes (e.g. IDE wrapping: "Set-Content ...")
+            if (cmd.starts_with('"') && cmd.ends_with('"'))
+                || (cmd.starts_with('\'') && cmd.ends_with('\''))
+            {
+                if cmd.len() >= 2 {
+                    cmd = &cmd[1..cmd.len() - 1];
+                }
+            }
+            let cmd = cmd.trim();
+
             if !cmd.is_empty() {
                 // 1. The full exact command line approved
                 list.push(format!("command({cmd})"));
 
-                // 2. The base binary / program (npm, pnpm, yarn, git, cargo, python, etc.)
+                // 2. The base binary / program (npm, pnpm, yarn, git, cargo, python, Set-Content, etc.)
                 if let Some(first_word) = cmd.split_whitespace().next() {
                     let clean = first_word
+                        .trim_matches('"')
+                        .trim_matches('\'')
                         .rsplit(['/', '\\'])
                         .next()
                         .unwrap_or(first_word)
+                        .trim_matches('"')
+                        .trim_matches('\'')
                         .trim_end_matches(".exe")
                         .trim_end_matches(".cmd")
                         .trim_end_matches(".bat");
-                    list.push(format!("command({clean})"));
-                    list.push(format!("command({clean} *)"));
+                    if !clean.is_empty() {
+                        list.push(format!("command({clean})"));
+                        list.push(format!("command({clean} *)"));
+                    }
                 }
             }
         }
@@ -400,6 +416,19 @@ mod tests {
         assert!(overrides_mcp.contains(&json!("mcp(github/*)")));
         assert!(overrides_mcp.contains(&json!("mcp(*)")));
         assert!(overrides_mcp.contains(&json!("call_mcp_tool(*)")));
+
+        // Test with quoted IDE command
+        let tc_ide = json!({
+            "name": "run_command",
+            "args": {
+                "CommandLine": "\"Set-Content -Path teste_coucou.txt -Value \\\"test\\\"\""
+            }
+        });
+        let out_ide = stdout("antigravity", "PermissionRequest", Some("allow"), None, Some(&tc_ide)).unwrap();
+        let val_ide: Value = serde_json::from_str(&out_ide).unwrap();
+        let overrides_ide = val_ide["permissionOverrides"].as_array().unwrap();
+        assert!(overrides_ide.contains(&json!("command(Set-Content)")));
+        assert!(overrides_ide.contains(&json!("command(Set-Content *)")));
     }
 
     #[test]
