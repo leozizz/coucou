@@ -1259,6 +1259,7 @@ struct SettingsView: View {
     @State private var voicePermissionsGranted: Bool = false
     @ObservedObject private var voiceEngine = VoiceEngine.shared
     @AppStorage("voiceLanguage")       private var voiceLanguage: String = "en"
+    @AppStorage("voiceListenLanguage") private var listenLanguage: String = "auto"
     @AppStorage("voiceTTSEngine")      private var ttsEngine: String = "system"
     @AppStorage("voiceElevenGender")   private var elevenGender: String = "female"
     @AppStorage("voicePitchFemale")    private var pitchFemale: Double = VoiceSettings.defaultPitchFemale
@@ -1330,6 +1331,40 @@ struct SettingsView: View {
         .onAppear {
             voicePermissionsGranted = VoiceSettings.micStatus == .granted
                 && VoiceSettings.speechStatus == .granted
+        }
+
+        GroupBox(String(localized: "Language")) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Text(String(localized: "voice.listen-language"))
+                        .frame(width: 130, alignment: .leading)
+                    Picker(String(localized: "voice.listen-language"), selection: $listenLanguage) {
+                        Text(String(localized: "voice.lang-auto")).tag("auto")
+                        Text(verbatim: "Français").tag("fr")
+                        Text(verbatim: "English").tag("en")
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 260)
+                }
+                HStack(spacing: 10) {
+                    Text(String(localized: "voice.language"))
+                        .frame(width: 130, alignment: .leading)
+                    Picker(String(localized: "voice.language"), selection: $voiceLanguage) {
+                        Text(verbatim: "Français").tag("fr")
+                        Text(verbatim: "English").tag("en")
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 180)
+                    .onChange(of: voiceLanguage) { _, _ in
+                        // Chosen by hand: Coucou no longer offers to switch.
+                        VoiceSettings.languageOfferDone = true
+                        ElevenLabsTTS.shared.reset()
+                    }
+                }
+            }
+            .padding(6)
         }
 
         GroupBox(String(localized: "voice.tts-engine")) {
