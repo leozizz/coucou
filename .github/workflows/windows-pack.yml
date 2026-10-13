@@ -5,11 +5,6 @@ name: Windows Pack
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'windows/**'
-      - '.github/workflows/windows-pack.yml'
   pull_request:
     paths:
       - 'windows/**'
