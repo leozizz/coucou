@@ -112,6 +112,17 @@
    "ru": "Активность",
    "id": "Aktivitas"
   },
+  "Add coins in Settings → Integrations": {
+   "zh-Hans": "在“设置 → 集成”中添加币种",
+   "hi": "सेटिंग्स → इंटीग्रेशन में कॉइन जोड़ें",
+   "es": "Añade monedas en Ajustes → Integraciones",
+   "ar": "أضف عملات في الإعدادات ← التكاملات",
+   "fr": "Ajoute des cryptos dans Réglages → Intégrations",
+   "bn": "সেটিংস → ইন্টিগ্রেশনে কয়েন যোগ করুন",
+   "pt-BR": "Adicione moedas em Ajustes → Integrações",
+   "ru": "Добавьте монеты в Настройки → Интеграции",
+   "id": "Tambahkan koin di Pengaturan → Integrasi"
+  },
   "Add your Anthropic API key in Settings → Chat first.": {
    "zh-Hans": "请先在设置 → 聊天中添加你的 Anthropic API 密钥。",
    "hi": "पहले सेटिंग्स → चैट में अपनी Anthropic API कुंजी जोड़ो।",
@@ -166,6 +177,17 @@
    "pt-BR": "Agentes",
    "ru": "Агенты",
    "id": "Agen"
+  },
+  "Alert me when a coin moves {0} %": {
+   "zh-Hans": "币价变动 {0} % 时提醒我",
+   "hi": "कोई कॉइन {0} % हिले तो सूचित करें",
+   "es": "Avisarme cuando una moneda se mueva un {0} %",
+   "ar": "نبّهني عندما تتحرك عملة بنسبة {0} %",
+   "fr": "M’alerter quand une crypto bouge de {0} %",
+   "bn": "কোনো কয়েন {0} % ওঠানামা করলে জানাও",
+   "pt-BR": "Avisar quando uma moeda variar {0} %",
+   "ru": "Сообщать, если монета изменится на {0} %",
+   "id": "Beri tahu saat koin bergerak {0} %"
   },
   "Allow": {
    "zh-Hans": "允许",
@@ -673,6 +695,17 @@
    "ru": "Хуки Codex",
    "id": "Hooks Codex"
   },
+  "Coins (BTC, ETH, SOL…)": {
+   "zh-Hans": "币种（BTC, ETH, SOL…）",
+   "hi": "कॉइन (BTC, ETH, SOL…)",
+   "es": "Monedas (BTC, ETH, SOL…)",
+   "ar": "العملات (BTC, ETH, SOL…)",
+   "fr": "Cryptos (BTC, ETH, SOL…)",
+   "bn": "কয়েন (BTC, ETH, SOL…)",
+   "pt-BR": "Moedas (BTC, ETH, SOL…)",
+   "ru": "Монеты (BTC, ETH, SOL…)",
+   "id": "Koin (BTC, ETH, SOL…)"
+  },
   "Color": {
    "zh-Hans": "颜色",
    "hi": "रंग",
@@ -805,6 +838,17 @@
    "ru": "Продолжить…",
    "id": "Lanjutkan…"
   },
+  "Copied · press ⌘V": {
+   "zh-Hans": "已复制 · 按 ⌘V",
+   "hi": "कॉपी हुआ · ⌘V दबाएँ",
+   "es": "Copiado · pulsa ⌘V",
+   "ar": "تم النسخ · اضغط ⌘V",
+   "fr": "Copié · fais ⌘V",
+   "bn": "কপি হয়েছে · ⌘V চাপুন",
+   "pt-BR": "Copiado · pressione ⌘V",
+   "ru": "Скопировано · нажмите ⌘V",
+   "id": "Disalin · tekan ⌘V"
+  },
   "Copy": {
    "zh-Hans": "复制",
    "hi": "कॉपी",
@@ -827,6 +871,17 @@
    "ru": "Coucou отвечает на",
    "id": "Coucou menjawab dalam"
   },
+  "Coucou needs the Accessibility permission to see the key and paste your words: turn on Coucou in System Settings → Privacy & Security → Accessibility.": {
+   "zh-Hans": "Coucou 需要“辅助功能”权限才能识别按键并粘贴你的话：请在“系统设置”→“隐私与安全性”→“辅助功能”中打开 Coucou。",
+   "hi": "कुंजी देखने और आपके शब्द चिपकाने के लिए Coucou को एक्सेसिबिलिटी अनुमति चाहिए: सिस्टम सेटिंग्स → गोपनीयता और सुरक्षा → एक्सेसिबिलिटी में Coucou चालू करें।",
+   "es": "Coucou necesita el permiso de Accesibilidad para ver la tecla y pegar tus palabras: activa Coucou en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad.",
+   "ar": "يحتاج Coucou إلى إذن تسهيلات الاستخدام لرؤية المفتاح ولصق كلماتك: فعّل Coucou في إعدادات النظام ← الخصوصية والأمن ← تسهيلات الاستخدام.",
+   "fr": "Coucou a besoin de l'autorisation Accessibilité pour voir la touche et coller tes mots : active Coucou dans Réglages Système → Confidentialité et sécurité → Accessibilité.",
+   "bn": "কী দেখতে আর আপনার কথা পেস্ট করতে Coucou-এর অ্যাক্সেসিবিলিটি অনুমতি দরকার: সিস্টেম সেটিংস → গোপনীয়তা ও নিরাপত্তা → অ্যাক্সেসিবিলিটিতে Coucou চালু করুন।",
+   "pt-BR": "O Coucou precisa da permissão de Acessibilidade para ver a tecla e colar suas palavras: ative o Coucou em Ajustes do Sistema → Privacidade e Segurança → Acessibilidade.",
+   "ru": "Coucou нужен доступ к Универсальному доступу, чтобы видеть клавишу и вставлять слова: включите Coucou в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ.",
+   "id": "Coucou butuh izin Aksesibilitas untuk melihat tombol dan menempel kata-katamu: aktifkan Coucou di Pengaturan Sistem → Privasi & Keamanan → Aksesibilitas."
+  },
   "Coucou reads back results in the spoken language, using a synthesized voice. 100% on-device.": {
    "zh-Hans": "Coucou 用语音语言朗读结果。完全在设备上处理。",
    "hi": "Coucou बोली जाने वाली भाषा में परिणाम पढ़ता है। सब कुछ डिवाइस पर।",
@@ -848,6 +903,17 @@
    "pt-BR": "Coucou responde em voz alta",
    "ru": "Coucou отвечает вслух",
    "id": "Coucou merespons dengan suara"
+  },
+  "Currency": {
+   "zh-Hans": "货币",
+   "hi": "मुद्रा",
+   "es": "Moneda",
+   "ar": "العملة",
+   "fr": "Monnaie",
+   "bn": "মুদ্রা",
+   "pt-BR": "Moeda",
+   "ru": "Валюта",
+   "id": "Mata uang"
   },
   "Custom…": {
    "zh-Hans": "自定义…",
@@ -1058,6 +1124,17 @@
    "ru": "Включить голосовые команды",
    "id": "Aktifkan perintah suara"
   },
+  "Exchange": {
+   "zh-Hans": "交易所",
+   "hi": "एक्सचेंज",
+   "es": "Plataforma",
+   "ar": "المنصة",
+   "fr": "Plateforme",
+   "bn": "এক্সচেঞ্জ",
+   "pt-BR": "Corretora",
+   "ru": "Биржа",
+   "id": "Bursa"
+  },
   "Explore all features without an API key or Claude Code. Nothing is written to disk.": {
    "zh-Hans": "无需 API 密钥或 Claude Code，探索所有功能。不会写入任何内容到磁盘。",
    "hi": "API कुंजी या Claude Code के बिना सभी सुविधाएँ एक्सप्लोर करें। डिस्क पर कुछ नहीं लिखा जाता।",
@@ -1112,6 +1189,17 @@
    "pt-BR": "Busca",
    "ru": "Получает",
    "id": "Mengambil"
+  },
+  "Flow dictation": {
+   "zh-Hans": "Flow 听写",
+   "hi": "Flow डिक्टेशन",
+   "es": "Dictado Flow",
+   "ar": "إملاء Flow",
+   "fr": "Dictée Flow",
+   "bn": "Flow ডিক্টেশন",
+   "pt-BR": "Ditado Flow",
+   "ru": "Диктовка Flow",
+   "id": "Dikte Flow"
   },
   "For a more natural voice, download a Premium voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices. In English: Ava for a woman, Jamie for a man (British).": {
    "zh-Hans": "想要更自然的声音，请下载 Premium 语音：系统设置 → 辅助功能 → 朗读内容 → 系统语音 → 管理语音。英语：女声选 Ava，男声选 Jamie（英式）。",
@@ -1311,6 +1399,28 @@
    "ru": "Скрывать названия проектов в изображениях",
    "id": "Sembunyikan nama proyek di gambar yang dibagikan"
   },
+  "Hold a key to dictate anywhere": {
+   "zh-Hans": "按住一个键，在任何地方听写",
+   "hi": "कहीं भी बोलकर लिखने के लिए एक कुंजी दबाए रखें",
+   "es": "Mantén una tecla para dictar en cualquier lugar",
+   "ar": "اضغط مطولًا على مفتاح للإملاء في أي مكان",
+   "fr": "Maintenir une touche pour dicter partout",
+   "bn": "যেকোনো জায়গায় ডিক্টেট করতে একটি কী চেপে ধরুন",
+   "pt-BR": "Segure uma tecla para ditar em qualquer lugar",
+   "ru": "Удерживайте клавишу, чтобы диктовать где угодно",
+   "id": "Tahan satu tombol untuk mendikte di mana saja"
+  },
+  "Hold {0}, speak, let go: your words are pasted where you type. Tap it twice to keep listening hands-free, and once more to paste. Esc cancels.": {
+   "zh-Hans": "按住 {0}，说话，松开：你的话会粘贴到你正在输入的位置。连按两次可免手持听写，再按一次即粘贴。按 Esc 取消。",
+   "hi": "{0} दबाए रखें, बोलें, छोड़ दें: आपके शब्द वहीं चिपक जाते हैं जहाँ आप टाइप करते हैं। बिना हाथ लगाए बोलने के लिए दो बार टैप करें, और चिपकाने के लिए एक बार फिर। Esc रद्द करता है।",
+   "es": "Mantén {0}, habla y suelta: tus palabras se pegan donde escribes. Púlsala dos veces para dictar sin manos y otra vez para pegar. Esc cancela.",
+   "ar": "اضغط مطولًا على {0} وتحدث ثم اترك: تُلصق كلماتك حيث تكتب. اضغط مرتين للإملاء دون استخدام اليدين، ثم مرة أخرى للصق. Esc يلغي.",
+   "fr": "Maintiens {0}, parle, relâche : tes mots sont collés là où tu écris. Tape deux fois pour dicter sans les mains, puis une fois pour coller. Échap annule.",
+   "bn": "{0} চেপে ধরুন, বলুন, ছেড়ে দিন: আপনি যেখানে লেখেন সেখানে আপনার কথা পেস্ট হয়। হাত ছাড়া ডিক্টেট করতে দুবার ট্যাপ করুন, পেস্ট করতে আরেকবার। Esc বাতিল করে।",
+   "pt-BR": "Segure {0}, fale e solte: suas palavras são coladas onde você digita. Toque duas vezes para ditar sem as mãos e mais uma vez para colar. Esc cancela.",
+   "ru": "Удерживайте {0}, говорите, отпустите — слова вставятся туда, где вы печатаете. Нажмите дважды, чтобы диктовать без рук, и ещё раз, чтобы вставить. Esc отменяет.",
+   "id": "Tahan {0}, bicara, lalu lepas: kata-katamu ditempel di tempat kamu mengetik. Ketuk dua kali untuk mendikte tanpa tangan, lalu sekali lagi untuk menempel. Esc membatalkan."
+  },
   "Hooks installed": {
    "zh-Hans": "Hooks 已安装",
    "hi": "Hooks स्थापित",
@@ -1421,6 +1531,17 @@
    "ru": "Наведение открывает остров; он сворачивается вскоре после того, как указатель уходит. Щёлкните внутри, чтобы он остался открытым.",
    "id": "Mengarahkan kursor ke pulau akan membukanya; pulau menutup lagi sesaat setelah kursor pergi. Klik di dalamnya agar tetap terbuka."
   },
+  "Inbox": {
+   "zh-Hans": "收件箱",
+   "hi": "इनबॉक्स",
+   "es": "Bandeja de entrada",
+   "ar": "البريد الوارد",
+   "fr": "Boîte de réception",
+   "bn": "ইনবক্স",
+   "pt-BR": "Caixa de entrada",
+   "ru": "Входящие",
+   "id": "Kotak masuk"
+  },
   "Install": {
    "zh-Hans": "安装",
    "hi": "इंस्टॉल करें",
@@ -1508,6 +1629,17 @@
    "pt-BR": "Manter um histórico das minhas sessões de código",
    "ru": "Хранить историю сессий",
    "id": "Simpan riwayat sesi kode saya"
+  },
+  "Key": {
+   "zh-Hans": "按键",
+   "hi": "कुंजी",
+   "es": "Tecla",
+   "ar": "المفتاح",
+   "fr": "Touche",
+   "bn": "কী",
+   "pt-BR": "Tecla",
+   "ru": "Клавиша",
+   "id": "Tombol"
   },
   "Key configured · {model}": {
    "zh-Hans": "密钥已配置 · {model}",
@@ -1707,6 +1839,17 @@
    "ru": "Голос Mac",
    "id": "Suara Mac"
   },
+  "Mail is closed": {
+   "zh-Hans": "“邮件”未打开",
+   "hi": "Mail बंद है",
+   "es": "Mail está cerrado",
+   "ar": "تطبيق Mail مغلق",
+   "fr": "Mail est fermé",
+   "bn": "Mail বন্ধ আছে",
+   "pt-BR": "O Mail está fechado",
+   "ru": "Почта закрыта",
+   "id": "Mail ditutup"
+  },
   "Mail not available.": {
    "zh-Hans": "邮件不可用。",
    "hi": "मेल उपलब्ध नहीं है।",
@@ -1750,6 +1893,17 @@
    "pt-BR": "Homem",
    "ru": "Мужской",
    "id": "Pria"
+  },
+  "Mark as read": {
+   "zh-Hans": "标为已读",
+   "hi": "पढ़ा हुआ चिह्नित करें",
+   "es": "Marcar como leído",
+   "ar": "وضع علامة كمقروءة",
+   "fr": "Marquer comme lu",
+   "bn": "পঠিত হিসেবে চিহ্নিত করুন",
+   "pt-BR": "Marcar como lido",
+   "ru": "Отметить как прочитанное",
+   "id": "Tandai sudah dibaca"
   },
   "Microphone unavailable": {
    "zh-Hans": "麦克风不可用",
@@ -1993,6 +2147,17 @@
    "ru": "Нет подробностей об ошибке.",
    "id": "Tidak ada detail kesalahan yang tersedia."
   },
+  "No messages": {
+   "zh-Hans": "没有邮件",
+   "hi": "कोई संदेश नहीं",
+   "es": "No hay mensajes",
+   "ar": "لا توجد رسائل",
+   "fr": "Aucun message",
+   "bn": "কোনো বার্তা নেই",
+   "pt-BR": "Nenhuma mensagem",
+   "ru": "Нет сообщений",
+   "id": "Tidak ada pesan"
+  },
   "No models yet — download one in {name} first.": {
    "zh-Hans": "暂无模型 — 请先在 {name} 中下载一个。",
    "hi": "अभी कोई मॉडल नहीं — पहले {name} में एक डाउनलोड करें।",
@@ -2080,6 +2245,17 @@
    "pt-BR": "Não instalado",
    "ru": "Не установлено",
    "id": "Belum terpasang"
+  },
+  "Not on this exchange: {0}": {
+   "zh-Hans": "此交易所没有：{0}",
+   "hi": "इस एक्सचेंज पर नहीं: {0}",
+   "es": "No está en esta plataforma: {0}",
+   "ar": "غير مدرجة في هذه المنصة: {0}",
+   "fr": "Absente de cette plateforme : {0}",
+   "bn": "এই এক্সচেঞ্জে নেই: {0}",
+   "pt-BR": "Não está nesta corretora: {0}",
+   "ru": "Нет на этой бирже: {0}",
+   "id": "Tidak ada di bursa ini: {0}"
   },
   "Not playing": {
    "zh-Hans": "未播放",
@@ -2301,6 +2477,17 @@
    "ru": "Открыть Cursor",
    "id": "Buka Cursor"
   },
+  "Open Mail": {
+   "zh-Hans": "打开“邮件”",
+   "hi": "Mail खोलें",
+   "es": "Abrir Mail",
+   "ar": "فتح Mail",
+   "fr": "Ouvrir Mail",
+   "bn": "Mail খুলুন",
+   "pt-BR": "Abrir o Mail",
+   "ru": "Открыть Почту",
+   "id": "Buka Mail"
+  },
   "Open Music": {
    "zh-Hans": "打开 Music",
    "hi": "Music खोलें",
@@ -2355,6 +2542,17 @@
    "pt-BR": "Abrir chat",
    "ru": "Открыть чат",
    "id": "Buka chat"
+  },
+  "Open in Mail": {
+   "zh-Hans": "在“邮件”中打开",
+   "hi": "Mail में खोलें",
+   "es": "Abrir en Mail",
+   "ar": "فتح في Mail",
+   "fr": "Ouvrir dans Mail",
+   "bn": "Mail-এ খুলুন",
+   "pt-BR": "Abrir no Mail",
+   "ru": "Открыть в Почте",
+   "id": "Buka di Mail"
   },
   "Open in n8n": {
    "zh-Hans": "在 n8n 中打开",
@@ -2675,6 +2873,17 @@
    "ru": "Проекты",
    "id": "Proyek"
   },
+  "Public prices from the exchange: no account, no key. Read every minute, only while the pill is on.": {
+   "zh-Hans": "来自交易所的公开行情：无需账户和密钥。仅在启用该胶囊时每分钟读取一次。",
+   "hi": "एक्सचेंज की सार्वजनिक कीमतें: न खाता, न कुंजी। पिल चालू होने पर ही हर मिनट पढ़ी जाती हैं।",
+   "es": "Precios públicos de la plataforma: sin cuenta ni clave. Se leen cada minuto, solo con la píldora activa.",
+   "ar": "أسعار عامة من المنصة: بلا حساب ولا مفتاح. تُقرأ كل دقيقة، فقط حين تكون الحبة مفعّلة.",
+   "fr": "Cours publics de la plateforme : ni compte ni clé. Lus chaque minute, seulement quand la pilule est active.",
+   "bn": "এক্সচেঞ্জের পাবলিক দাম: কোনো অ্যাকাউন্ট বা কী লাগে না। পিলটি চালু থাকলেই শুধু প্রতি মিনিটে পড়া হয়।",
+   "pt-BR": "Preços públicos da corretora: sem conta nem chave. Lidos a cada minuto, só com a pílula ativa.",
+   "ru": "Публичные цены биржи: без аккаунта и ключа. Обновляются раз в минуту, только когда пилюля включена.",
+   "id": "Harga publik dari bursa: tanpa akun, tanpa kunci. Dibaca tiap menit, hanya saat pil aktif."
+  },
   "Quit": {
    "zh-Hans": "退出",
    "hi": "छोड़ें",
@@ -2818,6 +3027,17 @@
    "ru": "Повторять один",
    "id": "Ulangi satu"
   },
+  "Reply": {
+   "zh-Hans": "回复",
+   "hi": "जवाब दें",
+   "es": "Responder",
+   "ar": "رد",
+   "fr": "Répondre",
+   "bn": "উত্তর দিন",
+   "pt-BR": "Responder",
+   "ru": "Ответить",
+   "id": "Balas"
+  },
   "Reply in terminal": {
    "zh-Hans": "在终端回复",
    "hi": "टर्मिनल में उत्तर दें",
@@ -2916,6 +3136,17 @@
    "pt-BR": "Revise o conteúdo abaixo antes de confirmar.",
    "ru": "Просмотри содержимое ниже перед подтверждением.",
    "id": "Tinjau konten di bawah sebelum mengonfirmasi."
+  },
+  "Right {0}": {
+   "zh-Hans": "右侧 {0}",
+   "hi": "दायाँ {0}",
+   "es": "{0} derecha",
+   "ar": "{0} الأيمن",
+   "fr": "{0} de droite",
+   "bn": "ডান {0}",
+   "pt-BR": "{0} da direita",
+   "ru": "Правая {0}",
+   "id": "{0} kanan"
   },
   "Runs": {
    "zh-Hans": "执行",
@@ -3445,6 +3676,17 @@
    "ru": "Для использования Google Gemini или OpenAI в чате. Ключи хранятся в Keychain.",
    "id": "Untuk menggunakan Google Gemini atau OpenAI dari chat. Kunci disimpan di Keychain."
   },
+  "To use fn, set System Settings → Keyboard → “Press 🌐 key to” to “Do Nothing”.": {
+   "zh-Hans": "要使用 fn，请在“系统设置”→“键盘”中将“按下 🌐 键时”设为“不执行任何操作”。",
+   "hi": "fn इस्तेमाल करने के लिए, सिस्टम सेटिंग्स → कीबोर्ड में “🌐 कुंजी दबाने पर” को “कुछ न करें” पर सेट करें।",
+   "es": "Para usar fn, en Ajustes del Sistema → Teclado, pon «Pulsar la tecla 🌐 para» en «No hacer nada».",
+   "ar": "لاستخدام fn، اضبط إعدادات النظام ← لوحة المفاتيح ← «اضغط على مفتاح 🌐 لـ» على «عدم القيام بأي شيء».",
+   "fr": "Pour utiliser fn, règle Réglages Système → Clavier → « Appuyer sur la touche 🌐 pour » sur « Ne rien faire ».",
+   "bn": "fn ব্যবহার করতে, সিস্টেম সেটিংস → কিবোর্ডে “🌐 কী চাপলে” “কিছুই করবেন না” সেট করুন।",
+   "pt-BR": "Para usar fn, em Ajustes do Sistema → Teclado, defina “Pressionar a tecla 🌐 para” como “Não fazer nada”.",
+   "ru": "Чтобы использовать fn, в Системных настройках → Клавиатура выберите для «Нажатие клавиши 🌐» вариант «Ничего не делать».",
+   "id": "Untuk memakai fn, atur Pengaturan Sistem → Papan Ketik → “Tekan tombol 🌐 untuk” ke “Jangan Lakukan Apa-apa”."
+  },
   "Too many hits at once.": {
    "zh-Hans": "一次点击太多次了。",
    "hi": "एक बार में बहुत ज़्यादा टैप।",
@@ -3700,12 +3942,12 @@
   },
   "Weekly recap": {
    "zh-Hans": "每周回顾",
-   "hi": "साप्ताहिक रिकैप",
+   "hi": "साप्ताहिक सारांश",
    "es": "Resumen semanal",
-   "ar": "الملخص الأسبوعي",
+   "ar": "ملخص أسبوعي",
    "fr": "Récap de la semaine",
-   "bn": "সাপ্তাহিক রিক্যাপ",
-   "pt-BR": "Resumo semanal",
+   "bn": "সাপ্তাহিক সারসংক্ষেপ",
+   "pt-BR": "Recapitulação semanal",
    "ru": "Итоги недели",
    "id": "Rekap mingguan"
   },
@@ -3852,6 +4094,17 @@
    "ru": "Твой ответ…",
    "id": "Jawaban Anda…"
   },
+  "Your voice is turned into text by your Mac's speech recognition, on-device when your Mac supports it; Coucou sends it nowhere. After pasting, the clipboard gets back what it held.": {
+   "zh-Hans": "你的声音由 Mac 的语音识别转成文字，Mac 支持时在设备上完成；Coucou 不会把它发送到任何地方。粘贴之后，剪贴板会恢复原来的内容。",
+   "hi": "आपकी आवाज़ को आपके Mac की वाक् पहचान टेक्स्ट में बदलती है, जब आपका Mac समर्थन करे तो डिवाइस पर ही; Coucou इसे कहीं नहीं भेजता। चिपकाने के बाद क्लिपबोर्ड में पहले वाली चीज़ वापस आ जाती है।",
+   "es": "Tu voz se convierte en texto con el reconocimiento de voz de tu Mac, en el propio equipo cuando tu Mac lo admite; Coucou no la envía a ningún sitio. Tras pegar, el portapapeles recupera lo que tenía.",
+   "ar": "يحوّل التعرّف على الكلام في جهاز Mac صوتك إلى نص، على الجهاز نفسه عندما يدعم جهازك ذلك؛ ولا يرسله Coucou إلى أي مكان. بعد اللصق تعود الحافظة إلى ما كانت تحتويه.",
+   "fr": "Ta voix est transformée en texte par la reconnaissance vocale de ton Mac, sur l'appareil quand ton Mac le permet ; Coucou ne l'envoie nulle part. Après le collage, le presse-papiers retrouve ce qu'il contenait.",
+   "bn": "আপনার Mac-এর স্পিচ রিকগনিশন আপনার কণ্ঠকে টেক্সটে রূপান্তর করে, Mac সমর্থন করলে ডিভাইসেই; Coucou এটি কোথাও পাঠায় না। পেস্ট করার পর ক্লিপবোর্ডে আগের জিনিস ফিরে আসে।",
+   "pt-BR": "Sua voz vira texto pelo reconhecimento de fala do seu Mac, no próprio aparelho quando o Mac permite; o Coucou não a envia para lugar nenhum. Depois de colar, a área de transferência recupera o que tinha.",
+   "ru": "Ваш голос превращает в текст распознавание речи Mac — прямо на устройстве, если Mac это поддерживает; Coucou никуда его не отправляет. После вставки буфер обмена возвращает прежнее содержимое.",
+   "id": "Suaramu diubah menjadi teks oleh pengenalan suara Mac, langsung di perangkat bila Mac mendukungnya; Coucou tidak mengirimnya ke mana pun. Setelah menempel, papan klip kembali berisi apa yang ada sebelumnya."
+  },
   "coding": {
    "zh-Hans": "编程",
    "hi": "कोडिंग",
@@ -3895,6 +4148,17 @@
    "pt-BR": "arquivos",
    "ru": "файлы",
    "id": "berkas"
+  },
+  "fn (🌐)": {
+   "zh-Hans": "fn (🌐)",
+   "hi": "fn (🌐)",
+   "es": "fn (🌐)",
+   "ar": "fn (🌐)",
+   "fr": "fn (🌐)",
+   "bn": "fn (🌐)",
+   "pt-BR": "fn (🌐)",
+   "ru": "fn (🌐)",
+   "id": "fn (🌐)"
   },
   "in {h} h {m}": {
    "zh-Hans": "{h} 小时 {m} 分后",
@@ -3950,6 +4214,17 @@
    "pt-BR": "precisa de permissão",
    "ru": "требует разрешения",
    "id": "butuh izin"
+  },
+  "now": {
+   "zh-Hans": "刚刚",
+   "hi": "अभी",
+   "es": "ahora",
+   "ar": "الآن",
+   "fr": "à l’instant",
+   "bn": "এখন",
+   "pt-BR": "agora",
+   "ru": "сейчас",
+   "id": "baru saja"
   },
   "presses this → island opens": {
    "zh-Hans": "按此键 → 岛打开",
@@ -4050,6 +4325,17 @@
    "ru": "своих: {0}",
    "id": "{0} kustom"
   },
+  "{0} did not answer": {
+   "zh-Hans": "{0} 未响应",
+   "hi": "{0} ने जवाब नहीं दिया",
+   "es": "{0} no respondió",
+   "ar": "لم يستجب {0}",
+   "fr": "{0} n’a pas répondu",
+   "bn": "{0} সাড়া দেয়নি",
+   "pt-BR": "{0} não respondeu",
+   "ru": "{0} не отвечает",
+   "id": "{0} tidak merespons"
+  },
   "{0} removed": {
    "zh-Hans": "已移除 {0}",
    "hi": "{0} हटाया गया",
@@ -4060,6 +4346,17 @@
    "pt-BR": "{0} removido",
    "ru": "{0} удалено",
    "id": "{0} dihapus"
+  },
+  "{0} unread": {
+   "zh-Hans": "{0} 封未读",
+   "hi": "{0} अपठित",
+   "es": "{0} sin leer",
+   "ar": "{0} غير مقروءة",
+   "fr": "{0} non lus",
+   "bn": "{0} অপঠিত",
+   "pt-BR": "{0} não lidos",
+   "ru": "Непрочитанных: {0}",
+   "id": "{0} belum dibaca"
   },
   "{0} — open Spotify": {
    "zh-Hans": "{0} — 打开 Spotify",

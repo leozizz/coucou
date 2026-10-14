@@ -86,8 +86,11 @@ struct SettingsView: View {
     #endif
 
     // Multi-provider chat keys
-    @State private var googleKey: String  = KeychainStore.shared.get("google-api-key") ?? ""
-    @State private var openAIKey: String  = KeychainStore.shared.get("openai-api-key") ?? ""
+    @State private var googleKey: String   = KeychainStore.shared.get("google-api-key") ?? ""
+    @State private var openAIKey: String   = KeychainStore.shared.get("openai-api-key") ?? ""
+    @State private var deepseekKey: String = KeychainStore.shared.get("deepseek-api-key") ?? ""
+    @State private var qwenKey: String     = KeychainStore.shared.get("qwen-api-key") ?? ""
+    @State private var moonshotKey: String = KeychainStore.shared.get("moonshot-api-key") ?? ""
     @State private var ollamaURL:    String = AppState.shared.ollamaServerURL
     @State private var lmstudioURL:  String = AppState.shared.lmstudioServerURL
     @State private var connectingOllama:    Bool = false
@@ -103,6 +106,11 @@ struct SettingsView: View {
     @State private var stripeKey: String    = KeychainStore.shared.get("stripe-api-key")  ?? ""
     @State private var calcomKey: String    = KeychainStore.shared.get("calcom-api-key")  ?? ""
     @State private var notionKey: String    = KeychainStore.shared.get("notion-api-key")  ?? ""
+    @AppStorage(CryptoSettings.exchangeKey)     private var cryptoExchange = CryptoExchange.coinbase.rawValue
+    @AppStorage(CryptoSettings.currencyKey)     private var cryptoCurrency = "EUR"
+    @AppStorage(CryptoSettings.coinsKey)        private var cryptoCoins = CryptoSettings.defaultCoins
+    @AppStorage(CryptoSettings.alertKey)        private var cryptoAlert = false
+    @AppStorage(CryptoSettings.alertPercentKey) private var cryptoAlertPercent = 5.0
 
     // Hotkey
     @State private var hotkeyFlags: UInt    = AppState.shared.hotkeyFlags
@@ -1067,6 +1075,48 @@ struct SettingsView: View {
                     statusMessage = String(localized: "status.openai-key-saved")
                 }
                 .buttonStyle(.borderedProminent)
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    Circle().fill(Color(hex: "#5B8FF9")).frame(width: 8, height: 8)
+                    Text("DeepSeek").font(.system(size: 12, weight: .semibold))
+                }
+                SecureField("API key", text: $deepseekKey)
+                    .textFieldStyle(.roundedBorder)
+                Button(String(localized: "Save")) {
+                    KeychainStore.shared.set("deepseek-api-key", value: deepseekKey)
+                    statusMessage = "DeepSeek key saved."
+                }
+                .buttonStyle(.borderedProminent)
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    Circle().fill(Color(hex: "#FF6A00")).frame(width: 8, height: 8)
+                    Text("Qwen (Alibaba)").font(.system(size: 12, weight: .semibold))
+                }
+                SecureField("API key", text: $qwenKey)
+                    .textFieldStyle(.roundedBorder)
+                Button(String(localized: "Save")) {
+                    KeychainStore.shared.set("qwen-api-key", value: qwenKey)
+                    statusMessage = "Qwen key saved."
+                }
+                .buttonStyle(.borderedProminent)
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    Circle().fill(Color(hex: "#7C5CFC")).frame(width: 8, height: 8)
+                    Text("Moonshot (Kimi)").font(.system(size: 12, weight: .semibold))
+                }
+                SecureField("API key", text: $moonshotKey)
+                    .textFieldStyle(.roundedBorder)
+                Button(String(localized: "Save")) {
+                    KeychainStore.shared.set("moonshot-api-key", value: moonshotKey)
+                    statusMessage = "Moonshot key saved."
+                }
+                .buttonStyle(.borderedProminent)
             }
             .padding(.vertical, 4)
         }
@@ -1246,7 +1296,49 @@ struct SettingsView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
-                Button(String(localized: "integrations.save")) { saveIntegrations() }
+                // Crypto: public prices, no key. Changes apply at once.
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 6) {
+                        Circle().fill(Color(hex: "#F7931A")).frame(width: 8, height: 8)
+                        Text(verbatim: "Crypto").font(.system(size: 12, weight: .semibold))
+                    }
+                    Picker(String(localized: "crypto.exchange"), selection: $cryptoExchange) {
+                        ForEach(CryptoExchange.allCases, id: \.rawValue) { ex in
+                            Text(verbatim: ex.name).tag(ex.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Picker(String(localized: "crypto.currency"), selection: $cryptoCurrency) {
+                        Text(verbatim: "EUR €").tag("EUR")
+                        Text(verbatim: "USD $").tag("USD")
+                    }
+                    .pickerStyle(.segmented)
+                    TextField(String(localized: "crypto.coins-placeholder"), text: $cryptoCoins)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { CryptoController.shared.settingsChanged() }
+                    HStack(spacing: 8) {
+                        Toggle(String(format: String(localized: "crypto.alert %lld"), Int64(cryptoAlertPercent)),
+                               isOn: $cryptoAlert)
+                        if cryptoAlert {
+                            Stepper("", value: $cryptoAlertPercent, in: 1...50, step: 1)
+                                .labelsHidden()
+                        }
+                    }
+                    Text(String(localized: "crypto.hint"))
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "#8E939C"))
+                }
+                .onChange(of: cryptoExchange) { _, _ in CryptoController.shared.settingsChanged() }
+                .onChange(of: cryptoCurrency) { _, _ in CryptoController.shared.settingsChanged() }
+
+                // Portfolio: exchange accounts + wallets.
+                PortfolioSettingsSection()
+                    .padding(.top, 4)
+
+                Button(String(localized: "integrations.save")) {
+                    saveIntegrations()
+                    CryptoController.shared.settingsChanged()
+                }
                     .buttonStyle(.borderedProminent)
             }
             .padding(6)
@@ -1276,6 +1368,9 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var voiceSection: some View {
+        // Flow dictation: hold a key anywhere, speak, the words are pasted where you type.
+        FlowSettingsBox()
+
         // Claude is Coucou's brain: no model, language or feature switches any more,
         // only the wake word, the Anthropic key it needs, and Coucou's voice.
         GroupBox(String(localized: "«\u{202F}OK Coucou\u{202F}» — voice wake word")) {

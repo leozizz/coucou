@@ -37,6 +37,8 @@ final class MacDictation: @unchecked Sendable {
     @ObservationIgnored private var finishing: CheckedContinuation<Void, Never>?
     @ObservationIgnored private var isFinishing = false
     @ObservationIgnored private var tapInstalled = false
+    /// Flow dictation's pill: the microphone's levels by frequency, fed from the same tap.
+    @ObservationIgnored var bands: FlowAudioBands?
 
     /// The text field's content: what was typed, then the words heard so far.
     var text: String { prefix + transcript }
@@ -65,7 +67,7 @@ final class MacDictation: @unchecked Sendable {
     @MainActor func start(from text: String) async {
         guard !isRecording, await Self.authorized() else { return }
         let built = Self.makeCandidates(language == Self.automatic ? Self.automaticLocales() : [Locale(identifier: language)])
-        guard !built.isEmpty, Self.startEngine(engine, feeding: built.map(\.request)) else { return }
+        guard !built.isEmpty, Self.startEngine(engine, feeding: built.map(\.request), bands: bands) else { return }
         tapInstalled = true
         prefix = text.isEmpty || text.hasSuffix(" ") ? text : text + " "
         transcript = ""
@@ -178,10 +180,12 @@ final class MacDictation: @unchecked Sendable {
 
     // MARK: Audio and recognizers (off the main actor: they call back on their own threads)
 
-    nonisolated private static func startEngine(_ engine: AVAudioEngine, feeding requests: [SFSpeechAudioBufferRecognitionRequest]) -> Bool {
+    nonisolated private static func startEngine(_ engine: AVAudioEngine, feeding requests: [SFSpeechAudioBufferRecognitionRequest],
+                                                bands: FlowAudioBands? = nil) -> Bool {
         let input = engine.inputNode
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
             for request in requests { request.append(buffer) }
+            bands?.consume(buffer)
         }
         engine.prepare()
         do { try engine.start() } catch {
