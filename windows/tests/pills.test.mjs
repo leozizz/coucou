@@ -8,14 +8,19 @@ import {
   toggleDeclared,
 } from "../src/core/pills.ts";
 import { DEFAULT_SETTINGS, State } from "../src/core/state.ts";
+import { installFakeDom } from "./fakedom.mjs";
+import { renderIntegrationCard } from "../src/views/integrations.ts";
+
+installFakeDom();
 
 // ── The catalog itself ────────────────────────────────────────────────────────
 
-test("the catalog holds the Mac's pills, in the Mac's order, with the Mac's values", () => {
+test("the catalog holds the Mac's pills with the Claude Code label for Windows and Linux", () => {
   // Copied from NotchBuddy/Sources/CoucouKit/PillCatalog.swift: an ID is a
   // contract value, and a colour or subtitle that drifts is a visible bug.
+  // Windows and Linux name the Claude Code integration after the agent.
   const mac = [
-    ["integration_claude", "VS Code", "#F5F6F8", "workspace", "Integration"],
+    ["integration_claude", "Claude Code", "#F5F6F8", "workspace", "Integration"],
     ["agent_cursor", "Cursor", "#C0C4CC", "workspace", "Integration"],
     ["agent_antigravity", "Antigravity", "#E879F9", "workspace", "Integration"],
     ["agent_codex", "Codex", "#2DD4BF", "workspace", "Integration"],
@@ -51,9 +56,9 @@ test("the catalog holds the Mac's pills, in the Mac's order, with the Mac's valu
   ]);
 });
 
-test("the pills Windows always had keep their IDs, names, colours and sources", () => {
+test("the shipped pills keep their IDs, colours and sources with current display names", () => {
   const shipped = [
-    ["integration_claude", "VS Code", "#F5F6F8", "claudeCode"],
+    ["integration_claude", "Claude Code", "#F5F6F8", "claudeCode"],
     ["integration_resend", "Resend", "#22C55E", "n8n"],
     ["integration_n8n", "n8n", "#F29B38", "n8n"],
     ["integration_vercel", "Vercel", "#7C5CFF", "n8n"],
@@ -74,22 +79,30 @@ test("IDs are unique", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("this build leaves out what only macOS has", () => {
+test("this build leaves out what only macOS has, and Claude Desktop on Linux", () => {
   const windows = availablePills("windows").map((p) => p.id);
   const linux = availablePills("linux").map((p) => p.id);
   for (const id of ["integration_music"]) {
     assert.ok(!windows.includes(id), id);
     assert.ok(!linux.includes(id), id);
   }
-  // Spotify is available on both systems.
-  assert.ok(windows.includes("integration_spotify"));
+  // Their plugins are written from Settings → Agents, and the chat talks to
+  // every provider (port/chat-providers), on both systems.
+  for (const id of ["agent_opencode", "agent_amp", "agent_hermes", "ai_google", "ai_openai", "ai_ollama", "ai_lmstudio"]) {
+    assert.ok(windows.includes(id), id);
+    assert.ok(linux.includes(id), id);
+  }
+  assert.ok(windows.includes("agent_claude-desktop"));
+  assert.ok(!linux.includes("agent_claude-desktop"));
+  // Spotify: MPRIS on Linux, the system media controls on Windows.
   assert.ok(linux.includes("integration_spotify"));
-  // WhatsApp is available on Windows.
+  assert.ok(windows.includes("integration_spotify"));
   assert.ok(windows.includes("integration_whatsapp"));
   assert.ok(!linux.includes("integration_whatsapp"));
+  assert.deepEqual(linux, windows.filter((id) => id !== "agent_claude-desktop" && id !== "integration_whatsapp"));
 });
 
-test("Spotify: a service with nothing to set up", () => {
+test("Spotify: a service on both systems with nothing to set up", () => {
   const def = pillDefinition("integration_spotify");
   assert.equal(def.support, "yes");
   assert.deepEqual(def.connect, { kind: "none" });
@@ -97,13 +110,16 @@ test("Spotify: a service with nothing to set up", () => {
   assert.ok(!isComingSoon("integration_spotify"));
   assert.ok(!isHookPill("integration_spotify"));
   assert.ok(!mainPillChoices("linux").some((p) => p.id === "integration_spotify"));
+  assert.ok(!mainPillChoices("windows").some((p) => p.id === "integration_spotify"));
 });
 
-test("a system-specific pill can be declared on its OS and is dropped on others", () => {
-  const d = { mainPill: "integration_claude", activeIntegrations: ["integration_whatsapp", "integration_n8n"] };
-  assert.deepEqual(sanitizeDeclared(d, "windows").activeIntegrations, ["integration_whatsapp", "integration_n8n"]);
-  assert.deepEqual(sanitizeDeclared(d, "linux").activeIntegrations, ["integration_n8n"]);
+test("Spotify can be declared on both systems; Claude Desktop only on Windows", () => {
+  const d = { mainPill: "integration_claude", activeIntegrations: ["integration_spotify", "integration_n8n", "integration_whatsapp"] };
+  assert.deepEqual(sanitizeDeclared(d, "linux").activeIntegrations, ["integration_spotify", "integration_n8n"]);
+  assert.deepEqual(sanitizeDeclared(d, "windows").activeIntegrations, ["integration_spotify", "integration_n8n", "integration_whatsapp"]);
   const empty = { mainPill: "integration_claude", activeIntegrations: [] };
+  assert.deepEqual(toggleDeclared(empty, "integration_spotify", "linux"), ["integration_spotify"]);
+  assert.deepEqual(toggleDeclared(empty, "integration_spotify", "windows"), ["integration_spotify"]);
   assert.deepEqual(toggleDeclared(empty, "integration_whatsapp", "windows"), ["integration_whatsapp"]);
   assert.equal(toggleDeclared(empty, "integration_whatsapp", "linux"), null);
   // Claude Desktop stays Windows only.
@@ -225,13 +241,14 @@ test("the main pill always loads, the declared ones join it, and focus starts on
   assert.equal(State.tasks[1].color, "#8AB4F8");
 });
 
-test("an old settings file gets VS Code as its main pill and keeps its integrations", () => {
+test("an old settings file gets Claude Code as its main pill and keeps its integrations", () => {
   State.settings = { ...DEFAULT_SETTINGS, mainPill: undefined };
   State.loadIntegrationTasks();
   assert.deepEqual(ids(), [
     "integration_claude", "integration_resend", "integration_n8n", "integration_vercel", "integration_github",
   ]);
   assert.equal(State.settings.mainPill, "integration_claude");
+  assert.equal(State.tasks[0].name, "Claude Code");
 });
 
 test("switching the main pill frees its slot and the old main pill goes when idle", () => {
@@ -295,4 +312,22 @@ test("toggling declares up to four pills and never the main one", () => {
   State.toggleIntegration("agent_gemini");
   assert.ok(!ids().includes("agent_gemini"));
   assert.equal(State.focusId, "integration_claude");
+});
+
+test("Claude Code is named after the agent in main-tool choices on both platforms", () => {
+  for (const os of ["windows", "linux"]) {
+    const choice = mainPillChoices(os).find((p) => p.id === "integration_claude");
+    assert.equal(choice.name, "Claude Code");
+    assert.equal(choice.source, "claudeCode");
+  }
+});
+
+test("the Claude Code idle card keeps the agent title when the task has a project name", () => {
+  State.loadIntegrationTasks();
+  const task = State.tasks.find((t) => t.id === "integration_claude");
+  task.name = "my-project";
+  const card = renderIntegrationCard(task, { openSettings() {} });
+  assert.ok(card.textContent.includes("Claude Code"));
+  assert.ok(!card.textContent.includes("my-project"));
+  assert.ok(card.textContent.includes("Open Visual Studio Code"));
 });

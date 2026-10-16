@@ -157,8 +157,64 @@ fn status_error(code: u16, unauthorised_hint: &str) -> String {
 // ── WhatsApp (Windows) ────────────────────────────────────────────────────────
 
 #[cfg(windows)]
+#[derive(serde::Serialize, Clone, Debug, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WhatsAppState {
+    pub present: bool,
+    pub unread: u32,
+}
+
+#[cfg(windows)]
+fn whatsapp() -> WhatsAppState {
+    use windows::core::BOOL;
+    use windows::Win32::Foundation::{HWND, LPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, GetWindowTextW, IsWindowVisible};
+
+    struct WaFound {
+        present: bool,
+        unread: u32,
+    }
+
+    unsafe extern "system" fn wa_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let found = unsafe { &mut *(lparam.0 as *mut WaFound) };
+        if unsafe { IsWindowVisible(hwnd) }.as_bool() {
+            let mut buf = [0u16; 512];
+            let len = unsafe { GetWindowTextW(hwnd, &mut buf) };
+            if len > 0 {
+                let title = String::from_utf16_lossy(&buf[..len as usize]);
+                let lower = title.to_lowercase();
+                if lower.contains("whatsapp") {
+                    found.present = true;
+                    let trimmed = title.trim_start();
+                    if let Some(rest) = trimmed.strip_prefix('(') {
+                        if let Some(end) = rest.find(')') {
+                            if let Ok(n) = rest[..end].trim().parse::<u32>() {
+                                found.unread = found.unread.max(n);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        true.into()
+    }
+
+    let mut found = WaFound { present: false, unread: 0 };
+    unsafe {
+        let _ = EnumWindows(
+            Some(wa_enum_proc),
+            LPARAM(&mut found as *mut WaFound as isize),
+        );
+    }
+    WhatsAppState {
+        present: found.present,
+        unread: found.unread,
+    }
+}
+
+#[cfg(windows)]
 async fn poll_whatsapp(app: AppHandle) {
-    let wa = tokio::task::block_in_place(crate::media::whatsapp);
+    let wa = tokio::task::block_in_place(whatsapp);
     let event = if wa.unread > 0 && is_new("whatsapp", &wa.unread.to_string()) {
         Some(IntegrationEvent {
             success: true,
