@@ -10,7 +10,7 @@ import { buildFileDiff, fileName, makeDiffStep, toOneLine } from "../core/diff";
 import { Sound } from "../core/sound";
 import { State, type AskedQuestion } from "../core/state";
 import { pillDefinition } from "../core/pills";
-import { APPROVAL_AGENTS, agentColor, agentName, validateAgent } from "./agents";
+import { APPROVAL_AGENTS, agentColor, agentName, isApprovalAgent, validateAgent } from "./agents";
 import type { Island } from "./island";
 import { parseClaudePlan, restorePlanUsage } from "../core/plan";
 import { setClaudePlanUsage, storedClaudePlanUsage } from "../views/usage";
@@ -302,11 +302,25 @@ function handleHook(island: Island, payload: HookPayload) {
   // Route to the right pill. Valid coucou_agent → dynamic "agent_<name>" pill.
   // "claude" is reserved; absent or invalid → Claude Code's own pill: Cursor's
   // when it runs in Cursor's terminal (Mac #120), VS Code's otherwise.
-  const validAgent = validateAgent(payload.coucou_agent);
+    const validAgent = validateAgent(payload.coucou_agent);
   const workspaceId = payload.term_editor === "cursor" ? CURSOR_ID : CLAUDE_ID;
-  const agentId = validAgent ? `agent_${validAgent}` : workspaceId;
-  const isExternalAgent = validAgent !== null;
   const sessionId = payload.session_id ?? "";
+  const isExternalAgent = validAgent !== null;
+
+  // Multi-session resolution:
+  // If an external agent session arrives, check if the base pill is already in use by another session.
+  let agentId = validAgent ? `agent_${validAgent}` : workspaceId;
+  if (validAgent && sessionId) {
+    const sessionPillId = `agent_${validAgent}:${sessionId}`;
+    if (State.tasks.some((t) => t.id === sessionPillId)) {
+      agentId = sessionPillId;
+    } else {
+      const baseTask = State.tasks.find((t) => t.id === agentId);
+      if (baseTask && baseTask.sessionId && baseTask.sessionId !== sessionId) {
+        agentId = sessionPillId;
+      }
+    }
+  }
 
   /** Alerts force the island open; work events only reveal the compact island. */
   const surface = (view: Parameters<Island["alert"]>[0], isAlert: boolean) => {
@@ -320,10 +334,15 @@ function handleHook(island: Island, payload: HookPayload) {
   };
 
   /** Ensure the agent pill exists (no-op for Claude Code). */
-  const ensurePill = () => {
+    const ensurePill = () => {
     if (isExternalAgent) {
       const base = agentName(validAgent!);
-      const title = payload.session_title ? `${base} · ${payload.session_title}` : base;
+      const surfaceTag = payload.platform ? `[${payload.platform.toUpperCase()}] ` : "";
+      const title = payload.session_title
+        ? `${base} · ${surfaceTag}${payload.session_title}`
+        : (agentId.includes(":") && projectName && projectName !== "Session"
+          ? `${base} · ${surfaceTag}${projectName}`
+          : (payload.platform ? `${base} ${surfaceTag}`.trim() : base));
       State.upsertExternalAgent(agentId, title, agentColor(validAgent!));
       const t = State.tasks.find((x) => x.id === agentId);
       if (t && cwd) t.sessionCwd = cwd;
@@ -363,7 +382,7 @@ function handleHook(island: Island, payload: HookPayload) {
   const focused = State.focusId === agentId;
 
   // The code view's data: Claude Code and Google Antigravity pills. Opening it is the user's click.
-  const isCodeAgent = !isExternalAgent || validAgent === "antigravity";
+  const isCodeAgent = !isExternalAgent || validAgent === "antigravity" || (validAgent != null && validAgent.startsWith("antigravity"));
   const code: CodeSource | null = isCodeAgent
     ? { sessionId, cwd, project: projectName, remote: !!payload.coucou_remote }
     : null;
@@ -555,7 +574,7 @@ function handleHook(island: Island, payload: HookPayload) {
       // Only Claude Code and the agents the relay can answer for (Codex, Copilot
       // CLI, Muse Code — same as the Mac) get a card. Anyone else's request is
       // declined at once, so the agent asks in its own terminal.
-      if (isExternalAgent && !APPROVAL_AGENTS.has(validAgent!)) {
+      if (isExternalAgent && !isApprovalAgent(validAgent!)) {
         if (payload.request_id) void Bridge.approvalDecline(payload.request_id);
         break;
       }

@@ -113,10 +113,11 @@ const AGENT_NAMES: Record<string, string> = {
 };
 
 export function agentName(id: string): string {
-  const known = AGENT_NAMES[id];
+  const baseId = id.includes(":") ? id.split(":")[0] : id;
+  const known = AGENT_NAMES[baseId];
   if (known) return known;
-  const raw = id.replace(/^agent_/, "");
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : id;
+  const raw = baseId.replace(/^agent_/, "");
+  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : baseId;
 }
 
 /** The most frequent key; ties go to whatever `order` ranks first. */

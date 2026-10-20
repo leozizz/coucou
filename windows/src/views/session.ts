@@ -524,7 +524,8 @@ export function buildCodeView(actions: ViewActions): ViewHost {
     sync() {
       const task = State.focusTask;
       let d = task ? byPill.get(task.id) : undefined;
-      if (!d && task && (task.id === "integration_claude" || task.id === "integration_cursor" || task.id === "agent_cursor" || task.id === "agent_antigravity")) {
+      const isAntigravity = task.id.includes("antigravity");
+      if (!d && task && (task.id === "integration_claude" || task.id === "integration_cursor" || task.id === "agent_cursor" || isAntigravity)) {
         d = dataFor(task.id, {
           sessionId: task.sessionId ?? "",
           cwd: task.sessionCwd ?? "",

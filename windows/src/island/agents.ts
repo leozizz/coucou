@@ -27,6 +27,11 @@ export const KNOWN_AGENTS: Record<string, KnownAgent> = {
  */
 export const APPROVAL_AGENTS = new Set(["codex", "copilot", "muse", "antigravity"]);
 
+export function isApprovalAgent(agent: string): boolean {
+  const base = agent.includes(":") ? agent.split(":")[0] : agent;
+  return APPROVAL_AGENTS.has(base) || base.startsWith("antigravity");
+}
+
 /** Same rule as HookServer.validateAgent on macOS. "claude" is reserved. */
 export function validateAgent(raw: string | undefined): string | null {
   if (!raw || raw.length > 24 || raw === "claude") return null;
@@ -37,16 +42,24 @@ export function validateAgent(raw: string | undefined): string | null {
 const FALLBACK_COLORS = ["#22C55E", "#EAB308", "#60A5FA", "#E879F9"];
 
 export function agentColor(id: string): string {
-  const known = KNOWN_AGENTS[id];
+  const base = id.includes(":") ? id.split(":")[0] : id;
+  const known = KNOWN_AGENTS[base];
   if (known) return known.color;
+  if (base.startsWith("antigravity")) return KNOWN_AGENTS.antigravity.color;
   let h = 0;
-  for (let i = 0; i < id.length; i++) {
-    h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
+  for (let i = 0; i < base.length; i++) {
+    h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
   }
   return FALLBACK_COLORS[Math.abs(h) % FALLBACK_COLORS.length];
 }
 
 /** The pill label: the agent's own name when Coucou knows it, else its id. */
 export function agentName(id: string): string {
-  return KNOWN_AGENTS[id]?.name ?? id;
+  const base = id.includes(":") ? id.split(":")[0] : id;
+  if (KNOWN_AGENTS[base]) return KNOWN_AGENTS[base].name;
+  if (base.startsWith("antigravity-")) {
+    const sub = base.slice("antigravity-".length);
+    return `Antigravity (${sub.toUpperCase()})`;
+  }
+  return id;
 }

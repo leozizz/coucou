@@ -154,7 +154,8 @@ export const HOST_OS: HostOs =
   typeof navigator !== "undefined" && /Windows/.test(navigator.userAgent ?? "") ? "windows" : "linux";
 
 export function pillDefinition(id: string): PillDefinition | undefined {
-  return PILL_CATALOG.find((p) => p.id === id);
+  const baseId = id.includes(":") ? id.split(":")[0] : id;
+  return PILL_CATALOG.find((p) => p.id === id || p.id === baseId);
 }
 
 function offeredOn(def: PillDefinition, os: HostOs): boolean {
@@ -182,9 +183,11 @@ export function mainPillChoices(os: HostOs = HOST_OS): PillDefinition[] {
 
 /** PillDefinition.sessionSubtitle — next to the name in a live session's card. */
 export function sessionSubtitle(id: string): string {
-  switch (id) {
+  const baseId = id.includes(":") ? id.split(":")[0] : id;
+  switch (baseId) {
     case "integration_claude": return "Claude Code";
     case "agent_cursor": return "Cursor";
+    case "agent_antigravity": return "Antigravity";
     case "agent_codex": return "Codex";
     case "agent_hermes": return "Hermes";
     case "agent_claude-desktop": return "Claude Desktop";
