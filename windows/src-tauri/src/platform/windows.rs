@@ -641,3 +641,19 @@ pub fn prepare_pill_window(win: &WebviewWindow, _mode: super::DesktopMode) -> bo
 pub fn set_pill_edge(_win: &WebviewWindow, _edge: &str) {}
 
 pub fn set_pill_input(_win: &WebviewWindow, _rects: Vec<(f64, f64, f64, f64)>) {}
+
+/// Shows a folder picker dialog to let the user select a project directory.
+pub fn pick_folder() -> Option<String> {
+    let script = r#"Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = 'Select project folder for Antigravity'; $app = New-Object System.Windows.Forms.Form; $app.TopMost = $true; if ($f.ShowDialog($app) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"#;
+    let mut cmd = Command::new("powershell");
+    cmd.args(["-NoProfile", "-NonInteractive", "-Command", script])
+        .creation_flags(CREATE_NO_WINDOW);
+    let out = cmd.output().ok()?;
+    if out.status.success() {
+        let path = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !path.is_empty() {
+            return Some(path);
+        }
+    }
+    None
+}

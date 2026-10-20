@@ -130,6 +130,8 @@ export interface Settings {
   ollamaUrl: string;
   lmstudioUrl: string;
   customUrl: string;
+  /** Antigravity CLI working directory for task execution. */
+  chatCwd: string;
   /** Global shortcuts the user changed, by action id (see core/shortcuts.ts). */
   shortcuts: Bindings;
   /**
@@ -189,6 +191,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ollamaUrl: "",
   lmstudioUrl: "",
   customUrl: "",
+  chatCwd: "",
   shortcuts: {},
   mochiOutfit: DEFAULT_OUTFIT,
   pillColors: {},

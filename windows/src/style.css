@@ -1174,8 +1174,40 @@ input[type="range"]::-webkit-slider-thumb {
 
 .model-row {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 6px;
   padding: 0 10px;
+}
+
+.project-btn {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  max-width: 140px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(157, 78, 221, 0.12);
+  color: #c77dff;
+  cursor: default;
+}
+
+.project-btn:hover:not(:disabled) {
+  background: rgba(157, 78, 221, 0.22);
+}
+
+.project-btn:disabled {
+  opacity: 0.6;
+}
+
+.project-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 10.5px var(--font);
+  color: #e0aaff;
 }
 
 .model-btn {
