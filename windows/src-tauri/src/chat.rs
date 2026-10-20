@@ -16,6 +16,7 @@ use crate::settings::Settings;
 use crate::{claude, local_chat, openai_compat, secrets};
 
 pub const ANTHROPIC: &str = "anthropic";
+pub const ANTIGRAVITY: &str = "antigravity";
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -203,10 +204,21 @@ pub async fn send(
     settings: &Settings,
     query: String,
     context: Option<ChatContext>,
+    cwd: Option<String>,
 ) -> Result<ChatReply, String> {
     let context = context.map(checked_context).transpose()?;
     let provider = settings.chat_provider.as_str();
     let model = model_for(settings, provider);
+    if provider == ANTIGRAVITY {
+        let work_dir = cwd.or_else(|| {
+            if settings.chat_cwd.is_empty() {
+                None
+            } else {
+                Some(settings.chat_cwd.clone())
+            }
+        });
+        return crate::agent_cli::send(app, work_dir.as_deref(), &model, &query).await;
+    }
     if provider == ANTHROPIC || provider.is_empty() {
         return claude::send(chat, &model, query, context).await;
     }
@@ -233,6 +245,9 @@ pub async fn send_for_phone(
     if provider == ANTHROPIC {
         return claude::send(chat, model, query, None).await;
     }
+    if provider == ANTIGRAVITY {
+        return Err("Antigravity CLI is only available locally on the desktop.".to_string());
+    }
     if let Some(p) = openai_compat::provider(provider) {
         return openai_compat::send(chat, p, model, query, None).await;
     }
@@ -246,6 +261,9 @@ pub async fn send_for_phone(
 /// that provider, and only once it has a key (or, for a local server, an
 /// address): nothing is sent anywhere before that.
 pub async fn models(settings: &Settings, provider: &str) -> Result<Vec<ModelInfo>, String> {
+    if provider == ANTIGRAVITY {
+        return Ok(crate::agent_cli::models());
+    }
     let no_key = || crate::i18n::t("No API key — add it in Settings.");
     if provider == ANTHROPIC {
         let key = secrets::get(claude::KEY).ok_or_else(no_key)?;

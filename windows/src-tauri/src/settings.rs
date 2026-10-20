@@ -50,6 +50,9 @@ pub struct Settings {
     pub lmstudio_url: String,
     /// Any other OpenAI-compatible server; its key, if any, is in the keychain.
     pub custom_url: String,
+    /// Working directory for Antigravity CLI tasks.
+    #[serde(default)]
+    pub chat_cwd: String,
     /// Global shortcuts the user changed, by action id; the others keep their
     /// default (see shortcuts.rs).
     pub shortcuts: crate::shortcuts::Bindings,
@@ -149,6 +152,7 @@ impl Default for Settings {
             ollama_url: String::new(),
             lmstudio_url: String::new(),
             custom_url: String::new(),
+            chat_cwd: String::new(),
             shortcuts: Default::default(),
             mochi_outfit: "auto".into(),
             pill_colors: BTreeMap::new(),

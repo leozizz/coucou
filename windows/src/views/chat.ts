@@ -31,6 +31,13 @@ const STRINGS = {
 
 let nextId = 1;
 
+function folderLabel(cwd: string): string {
+  if (!cwd) return "Select folder…";
+  const clean = cwd.replace(/[\\/]+$/, "");
+  const parts = clean.split(/[\\/]/);
+  return parts[parts.length - 1] || cwd;
+}
+
 function bubble(message: ChatMessage): HTMLElement {
   if (message.role === "user") {
     return h(
@@ -222,7 +229,25 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName,
     svg(ICONS.chevronUpDown, 9, { stroke: 2 }),
   );
-  const modelRow = h("div", { class: "model-row" }, modelBtn);
+  const folderIcon = svg(ICONS.folder, 11, { stroke: 1.6 });
+  const projectName = h("span", { class: "project-name" });
+  const projectBtn = h(
+    "button",
+    { class: "project-btn", title: "Select project folder" },
+    folderIcon,
+    projectName,
+  );
+  projectBtn.addEventListener("click", async () => {
+    if (sending) return;
+    const picked = await Bridge.pickFolder();
+    if (picked) {
+      State.settings = { ...State.settings, chatCwd: picked };
+      saveSettings();
+      drawModelButton();
+    }
+  });
+
+  const modelRow = h("div", { class: "model-row" }, projectBtn, modelBtn);
 
   const body = h("div", { class: "chat-body" });
   const picker = buildPicker(() => {
@@ -245,6 +270,15 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName.textContent = activeModel(State.settings) || t(STRINGS.noModel);
     modelBtn.classList.toggle("open", picker.isOpen);
     modelBtn.disabled = sending;
+
+    const isAgy = p.id === "antigravity";
+    projectBtn.style.display = isAgy ? "inline-flex" : "none";
+    if (isAgy) {
+      const cwd = State.settings.chatCwd;
+      projectName.textContent = folderLabel(cwd);
+      projectBtn.title = cwd ? `Project: ${cwd}` : "Select project folder";
+      projectBtn.disabled = sending;
+    }
   }
 
   modelBtn.addEventListener("click", () => {
@@ -283,7 +317,8 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
-      const reply = await Bridge.chatSend(query, context);
+      const cwd = State.settings.chatProvider === "antigravity" ? State.settings.chatCwd : undefined;
+      const reply = await Bridge.chatSend(query, context, cwd);
       State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text });
       State.stateOverride = null;
       Sound.play("finish");

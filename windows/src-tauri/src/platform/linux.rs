@@ -937,3 +937,7 @@ fn apply_rects(gw: &impl IsA<gtk::Widget>, rects: &[(f64, f64, f64, f64)]) {
     }
     gdk_window.input_shape_combine_region(&region, 0, 0);
 }
+
+pub fn pick_folder() -> Option<String> {
+    None
+}

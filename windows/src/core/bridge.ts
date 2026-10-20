@@ -335,8 +335,11 @@ export const Bridge = {
 
   // ── Chat, files, secrets ──────────────────────────────────────────────────
   /** One chat turn. The API key and any file bytes never leave Rust. */
-  chatSend: (query: string, context: ChatContext | null) =>
-    callOrThrow<{ text: string }>("chat_send", { query, context }),
+  chatSend: (query: string, context: ChatContext | null, cwd?: string) =>
+    callOrThrow<{ text: string }>("chat_send", { query, context, cwd: cwd || null }),
+  /** Opens a native folder selection dialog (used by Antigravity CLI). */
+  pickFolder: () => call<string | null>("pick_folder"),
+
   chatReset: () => call<void>("chat_reset"),
   /**
    * The models a provider offers, for the picker in the chat view. Rust asks

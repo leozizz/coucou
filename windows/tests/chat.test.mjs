@@ -54,7 +54,7 @@ test("a provider without a key is never asked for its models", async () => {
   $(".model-btn").fire("click");
   await flush();
   assert.ok($(".chat-body").classList.contains("picking"));
-  assert.deepEqual(chips(), ["Anthropic", "Google", "OpenAI", "OpenRouter"]);
+  assert.deepEqual(chips(), ["Anthropic", "Google", "OpenAI", "OpenRouter", "Antigravity CLI"]);
   assert.deepEqual(sent("secret_present"), [{ key: "anthropic-api-key" }]);
   assert.deepEqual(sent("chat_models"), []);
   assert.match($(".picker-status").textContent, /No API key/);
@@ -121,4 +121,40 @@ test("a local answer streams into one reply, then the finished text replaces it"
   assert.equal(view.el.find(".reply")[0].textContent, "Hello there!");
   assert.deepEqual(State.chatHistory.map((m) => m.role), ["user", "assistant"]);
   assert.ok(!$(".model-btn").disabled);
+});
+
+test("antigravity provider shows folder picker and sends with cwd", async () => {
+  answers.secret_present = false;
+  answers.chat_models = [
+    { id: "agy-auto", label: "Antigravity (Auto Mode)" },
+    { id: "agy-plan", label: "Antigravity (Plan Mode)" },
+  ];
+  answers.pick_folder = "C:\\Code\\MyProject";
+  answers.chat_send = { text: "Task completed." };
+
+  $(".model-btn").fire("click");
+  await flush();
+  const agyChip = view.el.find(".picker-chip").find((c) => c.textContent.includes("Antigravity"));
+  agyChip.fire("click");
+  await flush();
+
+  assert.equal(State.settings.chatProvider, "antigravity");
+  assert.equal($(".project-btn").style.display, "inline-flex");
+  assert.equal($(".project-name").textContent, "Select folder…");
+
+  // Pick folder
+  await $(".project-btn").fire("click");
+  await flush();
+  assert.equal(State.settings.chatCwd, "C:\\Code\\MyProject");
+  assert.equal($(".project-name").textContent, "MyProject");
+
+  // Send message
+  $(".chat-input").value = "fix the bug";
+  await $(".send-btn").fire("click");
+  await flush();
+
+  const sendCalls = sent("chat_send");
+  assert.equal(sendCalls.length, 1);
+  assert.equal(sendCalls[0].query, "fix the bug");
+  assert.equal(sendCalls[0].cwd, "C:\\Code\\MyProject");
 });

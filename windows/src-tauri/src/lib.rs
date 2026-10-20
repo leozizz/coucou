@@ -1,6 +1,7 @@
 // Coucou for Windows — app wiring and the commands the island calls.
 
 mod agent_hooks;
+mod agent_cli;
 mod agents;
 mod chat;
 mod claude;
@@ -531,9 +532,18 @@ async fn chat_send(
     chat: State<'_, Chat>,
     query: String,
     context: Option<ChatContext>,
+    cwd: Option<String>,
 ) -> Result<ChatReply, String> {
     let settings = shared.settings.lock().unwrap().clone();
-    chat::send(&app, &chat, &settings, query, context).await
+    chat::send(&app, &chat, &settings, query, context, cwd).await
+}
+
+#[tauri::command]
+async fn pick_folder() -> Option<String> {
+    tokio::task::spawn_blocking(crate::platform::pick_folder)
+        .await
+        .ok()
+        .flatten()
 }
 
 /// The models a provider offers, for the picker in the chat view. Only asked
@@ -843,6 +853,7 @@ pub fn run() {
             local_connect,
             local_set_key,
             chat_reset,
+            pick_folder,
             ingest_file,
             secret_present,
             secret_set,
